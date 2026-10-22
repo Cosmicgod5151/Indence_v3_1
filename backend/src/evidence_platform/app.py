@@ -20,9 +20,15 @@ from .modules.auth.auth_manager import AuthManager
 from .modules.retrieval.retriever import HybridRetriever
 from .modules.retrieval.context_assembler import ContextAssembler
 from .modules.synthesis.synthesizer import AnswerSynthesizer
-from .modules.synthesis.validator import NumericDosageValidator
+from .modules.synthesis.validator import NumericDosageValidator, ClinicalSafetyValidator
 from .modules.synthesis.highlighter import SpanHighlighter
 from .modules.synthesis.abstention import AbstentionLayer
+from .modules.clinical.clinical_intent import ClinicalIntentExtractor
+from .modules.clinical.population_matcher import PopulationMatchEvaluator
+from .modules.clinical.evidence_hierarchy import EvidenceHierarchyRanker
+from .modules.synthesis.evidence_grouper import EvidenceGrouper
+from .modules.synthesis.contradiction_checker import ContradictionChecker
+from .modules.synthesis.citation_auditor import CitationAuditor
 from .adapters.models.factory import (
     get_embedding_client,
     get_reranker_client,
@@ -218,6 +224,15 @@ async def clinical_search(
     highlighter = SpanHighlighter(db)
     abstention_layer = AbstentionLayer(entailment_client)
 
+    # 12-Step OpenEvidence Engine Pipeline
+    intent_extractor = ClinicalIntentExtractor()
+    population_evaluator = PopulationMatchEvaluator()
+    hierarchy_ranker = EvidenceHierarchyRanker()
+    evidence_grouper = EvidenceGrouper()
+    contradiction_checker = ContradictionChecker()
+    citation_auditor = CitationAuditor()
+    safety_validator = ClinicalSafetyValidator()
+
     # --- Profiling infrastructure ---
     _stage_timings: dict[str, float] = {}
     _candidate_counts: dict[str, int] = {}
@@ -234,65 +249,97 @@ async def clinical_search(
             return _proc.memory_info().rss / (1024 * 1024)
         return 0.0
 
-    # 1. Retrieve candidates (up to 50 for deep reranking & vector search)
+    # Step 1: Clinical Intent Extraction
     _t0 = time.perf_counter()
-    candidates, debug_info = await retriever.retrieve_with_debug(query, filters, limit=50)
+    intent = intent_extractor.extract_intent(query)
+    _stage_timings["intent_extraction_s"] = round(time.perf_counter() - _t0, 4)
+
+    # Step 1.5: Retrieve initial vector/hybrid candidates (up to 50)
+    _t0 = time.perf_counter()
+    raw_candidates, debug_info = await retriever.retrieve_with_debug(query, filters, limit=50, clinical_intent=intent)
     _stage_timings["retrieval_s"] = round(time.perf_counter() - _t0, 4)
-    _candidate_counts["pre_rerank"] = len(candidates)
-    logger.info(
-        "Step 1 Complete: %d candidates in %.4fs | RAM: %.1f MB",
-        len(candidates), _stage_timings["retrieval_s"], _mem_mb(),
-    )
+    _candidate_counts["pre_filter"] = len(raw_candidates)
+    _candidate_counts["unfiltered_retrieval"] = sum(1 for c in raw_candidates if getattr(c, "unfiltered_retrieval", False))
 
-    # 2. Assemble context with MMR diversification and Cross-Encoder Reranking
+    # Step 2 & Step 3: Evidence Population Matching & Hard Filters
     _t0 = time.perf_counter()
-    assembled = await assembler.assemble_context(query, candidates, max_tokens_budget=2048)
-    _stage_timings["reranking_s"] = round(time.perf_counter() - _t0, 4)
-    _candidate_counts["post_rerank"] = len(assembled.selected_candidates)
-    logger.info(
-        "Step 2 Complete: %d selected in %.4fs | RAM: %.1f MB",
-        len(assembled.selected_candidates), _stage_timings["reranking_s"], _mem_mb(),
-    )
+    matched_candidates, excluded_audit_entries = population_evaluator.filter_and_score_candidates(intent, raw_candidates)
+    _stage_timings["population_matching_s"] = round(time.perf_counter() - _t0, 4)
+    _candidate_counts["post_hard_filter"] = len(matched_candidates)
 
-    # 3. Synthesize structured answer claims
+    # Step 4: Evidence Hierarchy Ranking
     _t0 = time.perf_counter()
-    synth_res = await synthesizer.synthesize(query, assembled)
+    ranked_candidates = hierarchy_ranker.rank_candidates(matched_candidates)
+    _stage_timings["evidence_hierarchy_s"] = round(time.perf_counter() - _t0, 4)
+
+    # Step 5: MMR Diversification & Context Assembly
+    _t0 = time.perf_counter()
+    assembled = await assembler.assemble_context(query, ranked_candidates, max_tokens_budget=2048)
+    _stage_timings["context_assembly_s"] = round(time.perf_counter() - _t0, 4)
+    _candidate_counts["post_assembly"] = len(assembled.selected_candidates)
+
+    # Step 6: Evidence Grouping
+    _t0 = time.perf_counter()
+    clusters = evidence_grouper.group_candidates(assembled.selected_candidates)
+    _stage_timings["evidence_grouping_s"] = round(time.perf_counter() - _t0, 4)
+
+    # Step 7: Contradiction Check
+    _t0 = time.perf_counter()
+    contradiction_info = contradiction_checker.check_contradictions(clusters, assembled.selected_candidates)
+    _stage_timings["contradiction_check_s"] = round(time.perf_counter() - _t0, 4)
+
+    # Step 8: Synthesis & Clinical Safety Validation
+    _t0 = time.perf_counter()
+    synth_res = await synthesizer.synthesize(
+        query,
+        assembled,
+        intent=intent,
+        clusters=clusters,
+        contradiction_info=contradiction_info
+    )
     _stage_timings["synthesis_s"] = round(time.perf_counter() - _t0, 4)
     _candidate_counts["synthesis_claims"] = len(synth_res.direct_claims)
-    logger.info(
-        "Step 3 Complete: %d claims in %.4fs | RAM: %.1f MB",
-        len(synth_res.direct_claims), _stage_timings["synthesis_s"], _mem_mb(),
-    )
 
-    # 4. Numeric and dosage validation
-    _t0 = time.perf_counter()
+    # Numeric and dosage validation
     validated_claims = numeric_validator.validate_answer(synth_res.direct_claims, synth_res.evidence_map)
-    _stage_timings["validation_s"] = round(time.perf_counter() - _t0, 4)
 
-    # 5. Span alignment highlight coordinate resolution
-    _t0 = time.perf_counter()
-    aligned_claims = highlighter.align_claims(validated_claims, synth_res.evidence_map)
-    _stage_timings["highlighting_s"] = round(time.perf_counter() - _t0, 4)
+    # Step 8 Safety Validation: Audit claim citations against target population
+    safe_claims, rejected_citations = safety_validator.validate_clinical_safety(intent, validated_claims, synth_res.evidence_map)
 
-    # 6. Grounding NLI verification & dynamic safety abstention gating
+    # Step 9: Span Alignment & Grounding Highlighting
+    aligned_claims = highlighter.align_claims(safe_claims, synth_res.evidence_map)
+
+    # Grounding NLI verification & dynamic safety abstention gating
     _t0 = time.perf_counter()
     final_status, final_claims, abstention_reason = await abstention_layer.verify_and_calibrate(
         status=synth_res.status,
         direct_claims=aligned_claims,
         evidence_map=synth_res.evidence_map,
-        abstention_reason=synth_res.abstention_reason
+        abstention_reason=synth_res.abstention_reason,
+        candidates=assembled.selected_candidates,
+        intent=intent
     )
     _stage_timings["grounding_s"] = round(time.perf_counter() - _t0, 4)
     _candidate_counts["final_claims"] = len(final_claims)
+
+    # Step 11 & Step 12: Citation Audit & Failure Analysis
+    _t0 = time.perf_counter()
+    citation_audit, failure_analysis = citation_auditor.audit_citations(
+        intent,
+        assembled.selected_candidates,
+        excluded_audit_entries,
+        final_claims
+    )
+    _stage_timings["citation_audit_s"] = round(time.perf_counter() - _t0, 4)
+
     _mem_end = _mem_mb()
     _stage_timings["total_e2e_s"] = round(sum(_stage_timings.values()), 4)
     logger.info(
-        "Step 6 Complete: status=%s | %d claims | Total: %.4fs | RAM: %.1f→%.1f MB (Δ%.1f)",
-        final_status, len(final_claims), _stage_timings["total_e2e_s"],
-        _mem_start, _mem_end, _mem_end - _mem_start,
+        "12-Step Clinical Pipeline Complete: status=%s | %d claims | Total: %.4fs",
+        final_status, len(final_claims), _stage_timings["total_e2e_s"]
     )
 
-    # Save Trace to Database (QueryRun + RetrievalTrace + DBRetrievalCandidate + Answer + AnswerClaim + Citation)
+    # Save Trace to Database
     run_id = str(uuid.uuid4())
     query_run = QueryRun(
         id=run_id,
@@ -308,7 +355,7 @@ async def clinical_search(
     trace_record = RetrievalTrace(
         id=trace_id,
         query_run_id=run_id,
-        normalization={"query_text": query},
+        normalization={"query_text": query, "clinical_intent": intent.to_dict()},
         config={"filters": filters},
         model_versions={"embedding": "BGE-M3", "llm": "mock-llm"},
         timings=_stage_timings
@@ -316,7 +363,7 @@ async def clinical_search(
     db.add(trace_record)
 
     # Save candidates
-    for rank, cand in enumerate(candidates, start=1):
+    for rank, cand in enumerate(raw_candidates, start=1):
         db_cand = DBRetrievalCandidate(
             trace_id=trace_id,
             chunk_id=cand.chunk_id,
@@ -327,15 +374,60 @@ async def clinical_search(
         )
         db.add(db_cand)
 
+    # Apply span highlighting to synthesis sections
+    def _align_synthesis_section(section: dict | None) -> dict | None:
+        if not section or not section.get("text"):
+            return section
+        pseudo_claim = {
+            "text": section.get("text", ""),
+            "sentence_ids": section.get("sentence_ids", []),
+            "evidence_ids": section.get("evidence_ids", []),
+        }
+        aligned = highlighter.align_claims([pseudo_claim], synth_res.evidence_map)
+        if aligned:
+            section_copy = dict(section)
+            section_copy["aligned_spans"] = aligned[0].get("aligned_spans", [])
+            return section_copy
+        return section
+
+    aligned_recommendation = _align_synthesis_section(synth_res.recommendation)
+    aligned_clinical_reasoning = _align_synthesis_section(synth_res.clinical_reasoning)
+    aligned_alternatives = _align_synthesis_section(synth_res.alternatives)
+    aligned_bottom_line = _align_synthesis_section(synth_res.bottom_line)
+    aligned_supporting_evidence = [
+        _align_synthesis_section(se) or se
+        for se in (synth_res.supporting_evidence or [])
+    ]
+
+    synthesis_response = {
+        "recommendation": aligned_recommendation,
+        "clinical_reasoning": aligned_clinical_reasoning,
+        "supporting_evidence": aligned_supporting_evidence,
+        "alternatives": aligned_alternatives,
+        "bottom_line": aligned_bottom_line,
+        "clinical_context": synth_res.clinical_context,
+        "evidence_certainty": synth_res.evidence_certainty,
+    }
+
     answer_id = str(uuid.uuid4())
-    # Generate simple markdown
+    # Render structured synthesis markdown
     markdown_lines = []
     if final_status == "insufficient_evidence":
         markdown_lines.append(f"**Abstained**: {abstention_reason}")
     else:
-        for claim in final_claims:
-            markdown_lines.append(f"- {claim['text']}")
-    rendered_markdown = "\n".join(markdown_lines)
+        if synth_res.recommendation:
+            markdown_lines.append(f"## Recommendation\n{synth_res.recommendation.get('text', '')}")
+        if synth_res.clinical_reasoning:
+            markdown_lines.append(f"## Clinical Reasoning\n{synth_res.clinical_reasoning.get('text', '')}")
+        if synth_res.supporting_evidence:
+            markdown_lines.append("## Supporting Evidence")
+            for se in synth_res.supporting_evidence:
+                markdown_lines.append(f"- {se.get('text', '')}")
+        if synth_res.alternatives:
+            markdown_lines.append(f"## Alternatives\n{synth_res.alternatives.get('text', '')}")
+        if synth_res.bottom_line:
+            markdown_lines.append(f"## Bottom Line\n{synth_res.bottom_line.get('text', '')}")
+    rendered_markdown = "\n\n".join(markdown_lines)
 
     db_answer = Answer(
         id=answer_id,
@@ -344,19 +436,20 @@ async def clinical_search(
         rendered_markdown=rendered_markdown,
         confidence="high" if final_status == "answer" else "low",
         generation_model="mock-llm",
-        prompt_version="1.0.0",
+        prompt_version="2.0.0",
         verification_summary={"failed_nums_count": sum(1 for c in final_claims if not c.get("numeric_validation_passed", True))}
     )
     db.add(db_answer)
 
-    # Save AnswerClaims & Citations
-    # Direct Claims
+    # Save AnswerClaims
+    claim_ordinal = 0
     for idx, claim in enumerate(final_claims, start=1):
+        claim_ordinal += 1
         claim_id = str(uuid.uuid4())
         db_claim = AnswerClaim(
             id=claim_id,
             answer_id=answer_id,
-            ordinal=idx,
+            ordinal=claim_ordinal,
             text=claim.get("text", ""),
             claim_type="direct_answer",
             is_material=True,
@@ -369,7 +462,6 @@ async def clinical_search(
         for s_idx, span in enumerate(claim.get("aligned_spans", []), start=1):
             cit_id = str(uuid.uuid4())
             supporting_hash = hashlib.sha256(span.get("text", "").encode("utf-8")).hexdigest()
-            # Resolve ref_id to chunk_id
             parts = span.get("sentence_id", "").split(".S")
             ref_id = parts[0] if parts else ""
             candidate_ref = synth_res.evidence_map.get(ref_id)
@@ -391,23 +483,57 @@ async def clinical_search(
 
     db.commit()
 
+    # Step 10: Complete Structured Output Response
+    supporting_pmcids = list({getattr(c, "pmcid", "") for c in assembled.selected_candidates if getattr(c, "pmcid", None)})
+    supporting_trials = list({getattr(c, "hierarchy_label", c.study_type) for c in assembled.selected_candidates})
+    population_scores = {getattr(c, "chunk_id", f"chk_{i}"): getattr(c, "population_match_score", 0) for i, c in enumerate(assembled.selected_candidates)}
+
+    clinical_answer = (
+        (synth_res.recommendation or {}).get("text")
+        or (synth_res.bottom_line or {}).get("text")
+        or rendered_markdown
+    )
+
     return {
         "answer_id": answer_id,
         "trace_id": trace_id,
         "status": final_status,
+        "clinical_answer": clinical_answer,
+        "confidence": "High" if final_status == "answer" else "Low",
+        "extraction_confidence": intent.confidence,
+        "supporting_claims": final_claims,
+        "rejected_citations": rejected_citations,
+        "evidence_strength": synth_res.evidence_certainty,
+        "supporting_trials": supporting_trials,
+        "supporting_pmcid": supporting_pmcids,
+        "evidence_spans": [s for c in final_claims for s in c.get("aligned_spans", [])],
+        "population_match_score": population_scores,
+        "clinical_intent": intent.to_dict(),
+        "evidence_clusters": [c.to_dict() for c in clusters],
+        "contradiction_analysis": contradiction_info,
+        "citation_audit": citation_audit,
+        "failure_analysis": failure_analysis,
+        "synthesis": synthesis_response,
         "direct_answer_claims": final_claims,
         "evidence_summary_claims": synth_res.summary_claims,
         "limitations_claims": synth_res.limitations,
         "abstention_reason": abstention_reason,
         "_debug": {
             "timings": _stage_timings,
-            "memory_mb": {
-                "start": round(_mem_start, 1),
-                "end": round(_mem_end, 1),
-                "delta": round(_mem_end - _mem_start, 1),
-            },
             "candidate_counts": _candidate_counts,
             "retrieval_mode": "qdrant_vector" if not get_qdrant_client().is_mock() else "sqlite_fallback",
+            "clinical_intent_filters_applied": {
+                "disease_filter": intent.disease is not None,
+                "biomarker_filter": intent.biomarker_status is not None,
+                "broad_scope": intent.explicitly_broad_scope,
+            },
+            "population_match_breakdown": {
+                getattr(c, "chunk_id", f"chk_{i}"): {
+                    "score": getattr(c, "population_match_score", 0),
+                    "hierarchy_rank": getattr(c, "hierarchy_rank", None),
+                    "hierarchy_label": getattr(c, "hierarchy_label", None),
+                } for i, c in enumerate(assembled.selected_candidates)
+            },
         }
     }
 
@@ -472,7 +598,7 @@ async def search_debug(
     embedding_client = get_embedding_client()
     reranker_client = get_reranker_client()
 
-    retriever = HybridRetriever(db, embedding_client, qdrant_client)
+    retriever = HybridRetriever(db, embedding_client, get_qdrant_client())
     assembler = ContextAssembler(embedding_client, reranker_client)
 
     # 1. Retrieve candidates & extract pre-rerank debug info

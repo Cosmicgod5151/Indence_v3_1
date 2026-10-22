@@ -16,6 +16,22 @@ class QueryNormalizer:
     ONCOLOGY_DICTIONARY: dict[str, str] = {
         "t-dxd": "trastuzumab deruxtecan",
         "dxd": "deruxtecan",
+        "sacituzumab govitecan": "sacituzumab govitecan",
+        "tucatinib": "tucatinib",
+        "lapatinib": "lapatinib",
+        "palbociclib": "palbociclib",
+        "ribociclib": "ribociclib",
+        "abemaciclib": "abemaciclib",
+        "olaparib": "olaparib",
+        "sotorasib": "sotorasib",
+        "adagrasib": "adagrasib",
+        "capecitabine": "capecitabine",
+        "docetaxel": "docetaxel",
+        "paclitaxel": "paclitaxel",
+        "carboplatin": "carboplatin",
+        "cisplatin": "cisplatin",
+        "durvalumab": "durvalumab",
+        "ipilimumab": "ipilimumab",
         "mbc": "metastatic breast cancer",
         "nsclc": "non-small cell lung cancer",
         "sclc": "small cell lung cancer",
@@ -24,7 +40,7 @@ class QueryNormalizer:
         "rct": "randomized controlled trial",
         "egfr": "epidermal growth factor receptor",
         "her2": "human epidermal growth factor receptor 2",
-        "her2-low": "human epidermal growth factor receptor 2 low",
+        "her2-low": "human epidermal growth factor receptor 2",
         "her2+": "human epidermal growth factor receptor 2 positive",
         "hr+": "hormone receptor positive",
         "hr-": "hormone receptor negative",
@@ -60,6 +76,10 @@ class QueryNormalizer:
         "myocardial infarction": ["heart attack", "MI"],
         "non-small cell lung cancer": ["NSCLC", "non-small-cell lung carcinoma"],
         "trastuzumab deruxtecan": ["T-DXd", "Enhertu"],
+        "db03": ["DESTINY-Breast03", "DESTINY-Breast 03"],
+        "db-03": ["DESTINY-Breast03", "DESTINY-Breast 03"],
+        "kn177": ["KEYNOTE-177"],
+        "kn-177": ["KEYNOTE-177"],
     }
 
     def normalize(self, query: str) -> NormalizedQuery:
@@ -115,3 +135,14 @@ class QueryNormalizer:
             rewritten_query=rewritten_text,
             expanded_terms=expanded
         )
+
+    def generate_population_query(self, normalized_query: str, intent: str = "") -> str:
+        """Produce a population-focused query variant for retrieval."""
+        # A simple heuristic example: "Is T-DXd effective in HER2+ breast cancer?" -> 
+        # "trastuzumab deruxtecan HER2-positive breast cancer efficacy randomized controlled trial"
+        cleaned = re.sub(r"^(is|are|does|do|can|could|would|will)\b", "", normalized_query, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\b(effective|efficacious|work|good)\b", "efficacy", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\b(in|for|with)\b", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\?", "", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return f"{cleaned} randomized controlled trial"

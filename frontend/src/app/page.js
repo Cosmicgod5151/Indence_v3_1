@@ -47,6 +47,7 @@ export default function Home() {
 
   const [apiBase, setApiBase] = useState("http://localhost:8000/api/v1");
   const [csrfToken, setCsrfToken] = useState("");
+  const [expandedContradictions, setExpandedContradictions] = useState({});
 
   // Fetch CSRF token on mount using dynamic API base host
   useEffect(() => {
@@ -353,7 +354,7 @@ export default function Home() {
           <span style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>{user.email}</span>
           <button 
             onClick={handleLogout}
-            style={{ background: "transparent", border: "1px solid var(--border-color)", padding: "0.4rem 0.8rem", borderRadius: "6px", color: "var(--text-secondary)", cursor: "pointer" }}
+            className="logout-btn"
           >
             Logout
           </button>
@@ -453,75 +454,178 @@ export default function Home() {
             )}
 
             {results && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: "1.5rem" }}>
-                {/* Claims Panel */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  <h2 style={{ fontSize: "1.25rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>
-                    Formulated Clinical Claims
-                  </h2>
-
-                  {results.status === "insufficient_evidence" ? (
-                    <div className="glass" style={{ padding: "1.5rem", borderLeft: "4px solid var(--accent-rose)" }}>
-                      <h3 style={{ color: "var(--accent-rose)", marginBottom: "0.5rem" }}>Abstention Triggered</h3>
-                      <p>{results.abstention_reason}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                {/* 1. Clinical Intent Extraction Card */}
+                {results.clinical_intent && (
+                  <div className="clinical-intent-card glass">
+                    <div className="intent-header">
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <span style={{ fontSize: "0.85rem", color: "var(--accent-cyan)", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Extracted Clinical Intent
+                        </span>
+                      </div>
+                      <span className={`intent-badge ${results.extraction_confidence || 'high'}`}>
+                        {results.extraction_confidence || 'High'} Intent Confidence
+                      </span>
                     </div>
-                  ) : (
-                    results.direct_answer_claims.map((claim, idx) => {
-                      const failedVal = !claim.numeric_validation_passed;
+
+                    <div className="intent-grid">
+                      {results.clinical_intent.disease && (
+                        <div className="intent-item">
+                          <span className="intent-label">Target Disease</span>
+                          <span className="intent-value">{results.clinical_intent.disease}</span>
+                        </div>
+                      )}
+                      {results.clinical_intent.biomarker_status && (
+                        <div className="intent-item">
+                          <span className="intent-label">Primary Biomarker</span>
+                          <span className="intent-value">{results.clinical_intent.biomarker_status}</span>
+                        </div>
+                      )}
+                      {results.clinical_intent.treatment && results.clinical_intent.treatment.length > 0 && (
+                        <div className="intent-item">
+                          <span className="intent-label">Queried Treatment</span>
+                          <span className="intent-value">
+                            {Array.isArray(results.clinical_intent.treatment) 
+                              ? results.clinical_intent.treatment.join(", ") 
+                              : results.clinical_intent.treatment}
+                          </span>
+                        </div>
+                      )}
+                      {results.clinical_intent.line_of_therapy && (
+                        <div className="intent-item">
+                          <span className="intent-label">Line of Therapy</span>
+                          <span className="intent-value">{results.clinical_intent.line_of_therapy}</span>
+                        </div>
+                      )}
+                      {results.clinical_intent.stage && (
+                        <div className="intent-item">
+                          <span className="intent-label">Disease Stage</span>
+                          <span className="intent-value">{results.clinical_intent.stage}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {results.clinical_intent.rejected_subgroups && results.clinical_intent.rejected_subgroups.length > 0 && (
+                      <div style={{ marginTop: "0.85rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.75rem" }}>
+                        <span className="intent-label" style={{ display: "block", marginBottom: "0.4rem" }}>
+                          Excluded Subgroups (Population Boundary Enforced)
+                        </span>
+                        <div>
+                          {results.clinical_intent.rejected_subgroups.map((sub, sIdx) => (
+                            <span key={sIdx} className="rejected-tag">✕ {sub}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. Detected Contradictions Banner — Explainable */}
+                {results.contradiction_analysis && results.contradiction_analysis.has_contradiction && (
+                  <div className="contradiction-banner glass">
+                    <div className="contradiction-header">
+                      <span>⚠️ Evidence Contradictions Detected ({results.contradiction_analysis.contradiction_count})</span>
+                    </div>
+                    <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
+                      {results.contradiction_analysis.consensus_summary}
+                    </p>
+                    {results.contradiction_analysis.contradictions && results.contradiction_analysis.contradictions.map((cItem, cIdx) => {
+                      const isExpanded = expandedContradictions[cIdx] || false;
+                      const interpretationClass = cItem.clinical_interpretation && cItem.clinical_interpretation.includes("manual review")
+                        ? "manual-review" : "contextual";
                       return (
-                        <div 
-                          key={idx}
-                          className={`claim-card glass glass-interactive ${failedVal ? "failed-validation" : "verified"}`}
-                          onMouseEnter={() => setActiveClaim(claim)}
-                          onClick={() => setActiveClaim(claim)}
-                        >
-                          <div className="claim-header">
-                            <span style={{ color: "var(--text-muted)", fontSize: "0.85rem", fontWeight: "600" }}>CLAIM #{idx + 1}</span>
-                            <span className={`status-badge ${failedVal ? "failed" : "verified"}`}>
-                              {failedVal ? "Hallucination Alert" : "Verified Source Grounded"}
-                            </span>
-                          </div>
-                          <p style={{ fontSize: "1rem", lineHeight: "1.5" }}>
-                            {claim.text}
-                            {claim.sentence_ids && claim.sentence_ids.map((sid, s_idx) => (
-                              <span key={s_idx} className="citation-reference">{sid}</span>
-                            ))}
-                          </p>
-
-                          {failedVal && (
-                            <div style={{ fontSize: "0.85rem", color: "var(--accent-rose)", background: "rgba(244,63,94,0.08)", padding: "0.5rem", borderRadius: "6px", marginTop: "0.5rem" }}>
-                              <strong>Ungrounded clinical figures detected:</strong> {claim.failed_clinical_values.join(", ")}
+                        <div key={cIdx} className="contradiction-card">
+                          {/* Collapsed header — always visible */}
+                          <div
+                            className="contradiction-card-header"
+                            onClick={() => setExpandedContradictions(prev => ({ ...prev, [cIdx]: !prev[cIdx] }))}
+                          >
+                            <div className="contradiction-header-left">
+                              <span style={{ fontWeight: "600", fontSize: "0.88rem", color: "var(--text-primary)", flexShrink: 0 }}>{cItem.type}</span>
+                              <span className={`contradiction-badge ${(cItem.severity || 'moderate').toLowerCase()}`}>
+                                {cItem.severity}
+                              </span>
+                              {!isExpanded && cItem.clinical_interpretation && (
+                                <span className="interpretation-preview">{cItem.clinical_interpretation}</span>
+                              )}
                             </div>
-                          )}
-
-                          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFeedbackClaimId(idx);
-                              }}
-                              style={{ background: "transparent", border: "1px solid var(--border-color)", padding: "0.25rem 0.6rem", borderRadius: "4px", fontSize: "0.8rem", color: "var(--text-secondary)", cursor: "pointer" }}
-                            >
-                              Report Error
-                            </button>
+                            <span className="contradiction-toggle">{isExpanded ? "▲ Collapse" : "▼ Details"}</span>
                           </div>
 
-                          {feedbackClaimId === idx && (
-                            <div className="glass" style={{ padding: "1rem", marginTop: "0.5rem", background: "var(--bg-surface-elevated)" }} onClick={(e) => e.stopPropagation()}>
-                              {feedbackSent ? (
-                                <p style={{ color: "var(--accent-emerald)", fontSize: "0.9rem" }}>Thank you! Discrepancy successfully logged for audit review.</p>
-                              ) : (
-                                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                                  <label style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Describe discrepancy (e.g. mismatched dosage value):</label>
-                                  <textarea 
-                                    className="input-text" 
-                                    rows="2" 
-                                    value={feedbackText} 
-                                    onChange={(e) => setFeedbackText(e.target.value)}
-                                  />
-                                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                                    <button onClick={() => setFeedbackClaimId(null)} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", fontSize: "0.85rem" }}>Cancel</button>
-                                    <button onClick={() => submitFeedback(claim.text)} className="search-btn" style={{ padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.85rem" }}>Submit</button>
+                          {/* Expanded body — 5 explainable sections */}
+                          {isExpanded && (
+                            <div className="contradiction-card-body">
+                              {/* Dynamic evidence-specific description */}
+                              <div className="contradiction-claim" style={{ borderLeftColor: "rgba(99, 102, 241, 0.4)", background: "rgba(99, 102, 241, 0.05)" }}>
+                                {cItem.description}
+                              </div>
+                              {cItem.action && (
+                                <p style={{ fontSize: "0.78rem", color: "var(--accent-cyan)", fontStyle: "italic", margin: 0 }}>
+                                  {cItem.action}
+                                </p>
+                              )}
+
+                              {/* 1. Conflicting Studies */}
+                              {cItem.conflicting_evidence_ids && cItem.conflicting_evidence_ids.length > 0 && (
+                                <div>
+                                  <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.3rem", letterSpacing: "0.04em" }}>Conflicting Studies</div>
+                                  <div className="contradiction-studies">
+                                    {cItem.conflicting_evidence_ids.map((study, sIdx) => (
+                                      <React.Fragment key={sIdx}>
+                                        {sIdx > 0 && <span className="contradiction-vs">vs</span>}
+                                        <span className="contradiction-study-pill">
+                                          {study.pmcid || "Unknown"}
+                                          {study.study_type && <span className="study-type-tag">{study.study_type}</span>}
+                                        </span>
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 2. Claim in Conflict */}
+                              {cItem.claim_in_conflict && (
+                                <div>
+                                  <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.3rem", letterSpacing: "0.04em" }}>Claim in Conflict</div>
+                                  <div className="contradiction-claim">{cItem.claim_in_conflict}</div>
+                                </div>
+                              )}
+
+                              {/* 3. Reason for Difference */}
+                              {cItem.reason_for_difference && (
+                                <div>
+                                  <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.3rem", letterSpacing: "0.04em" }}>Why They Differ</div>
+                                  <div className="contradiction-reason">
+                                    <span className="contradiction-reason-icon">🔍</span>
+                                    <span>{cItem.reason_for_difference}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 4. Evidence Quality */}
+                              {cItem.evidence_quality && cItem.evidence_quality.length > 0 && (
+                                <div>
+                                  <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.3rem", letterSpacing: "0.04em" }}>Evidence Strength</div>
+                                  <div className="contradiction-quality-grid">
+                                    {cItem.evidence_quality.map((eq, eqIdx) => (
+                                      <div key={eqIdx} className="contradiction-quality-card">
+                                        <div className="quality-label">Study {String.fromCharCode(65 + eqIdx)}</div>
+                                        <div className="quality-type">{eq.pmcid} — {eq.study_type}</div>
+                                        <div className="quality-tier">{eq.strength_tier} Evidence</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 5. Clinical Interpretation */}
+                              {cItem.clinical_interpretation && (
+                                <div>
+                                  <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.3rem", letterSpacing: "0.04em" }}>Clinical Interpretation</div>
+                                  <div className={`contradiction-interpretation ${interpretationClass}`}>
+                                    {interpretationClass === "manual-review" ? "⚠️ " : "✓ "}
+                                    {cItem.clinical_interpretation}
                                   </div>
                                 </div>
                               )}
@@ -529,25 +633,214 @@ export default function Home() {
                           )}
                         </div>
                       );
-                    })
-                  )}
-                </div>
+                    })}
+                  </div>
+                )}
 
-                {/* Grounding Source Coordinates Panel */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  <h2 style={{ fontSize: "1.25rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>
-                    Source Verification Spans
-                  </h2>
-                  <div className="source-highlight-panel glass" style={{ height: "400px", overflowY: "auto" }}>
-                    {activeClaim && activeClaim.aligned_spans && activeClaim.aligned_spans.length > 0 ? (
-                      activeClaim.aligned_spans.map((span, s_idx) => (
-                        <div key={s_idx}>
-                          {renderHighlightedText(span)}
+                {/* 3. Main Synthesis & Claims Layout */}
+                <div className="claims-source-grid">
+                  {/* Claims Panel */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <h2 style={{ fontSize: "1.25rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>
+                      Formulated Clinical Claims
+                    </h2>
+
+                    {results.status === "insufficient_evidence" ? (
+                      <div className="glass" style={{ padding: "1.5rem", borderLeft: "4px solid var(--accent-rose)" }}>
+                        <h3 style={{ color: "var(--accent-rose)", marginBottom: "0.5rem" }}>Abstention Triggered</h3>
+                        <p>{results.abstention_reason}</p>
+                      </div>
+                    ) : results.synthesis && results.synthesis.recommendation ? (
+                      <div className="synthesis-container">
+                        <div className="synthesis-header">
+                          {results.synthesis.evidence_certainty && (
+                            <>
+                              {results.synthesis.evidence_certainty.recommendation_strength && (
+                                <span className={`synth-badge ${results.synthesis.evidence_certainty.recommendation_strength.toLowerCase() === 'strong' ? 'strong' : 'conditional'}`}>
+                                  {results.synthesis.evidence_certainty.recommendation_strength} Recommendation
+                                </span>
+                              )}
+                              {results.synthesis.evidence_certainty.evidence_quality && (
+                                <span className={`synth-badge ${results.synthesis.evidence_certainty.evidence_quality.toLowerCase().replace(' ', '-')}`}>
+                                  {results.synthesis.evidence_certainty.evidence_quality} Quality
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
-                      ))
+
+                        {/* Evidence Clusters Summary */}
+                        {results.evidence_clusters && results.evidence_clusters.length > 0 && (
+                          <div style={{ marginBottom: "1rem" }}>
+                            <span className="intent-label" style={{ display: "block", marginBottom: "0.4rem" }}>
+                              Structured Trial & Population Clusters ({results.evidence_clusters.length})
+                            </span>
+                            <div className="clusters-container">
+                              {results.evidence_clusters.map((cluster, clIdx) => (
+                                <span key={clIdx} className="cluster-pill">
+                                  {cluster.population_label || cluster.trial_name || `Cluster #${clIdx + 1}`} ({cluster.candidates_count || 1} studies)
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div 
+                          className="synth-section recommendation glass glass-interactive"
+                          onClick={() => setActiveClaim({ text: results.synthesis.recommendation.text, sentence_ids: results.synthesis.recommendation.sentence_ids, evidence_ids: results.synthesis.recommendation.evidence_ids, aligned_spans: results.synthesis.recommendation.aligned_spans || [] })}
+                        >
+                          <div className="synth-section-title">Recommendation</div>
+                          <p className="synth-text">
+                            {results.synthesis.recommendation.text}
+                            {results.synthesis.recommendation.sentence_ids && results.synthesis.recommendation.sentence_ids.map((sid, s_idx) => (
+                              <span key={s_idx} className="citation-reference">{sid}</span>
+                            ))}
+                          </p>
+                        </div>
+
+                        {results.synthesis.clinical_reasoning && (
+                          <div 
+                            className="synth-section glass glass-interactive"
+                            style={{ opacity: 0.9 }}
+                            onClick={() => setActiveClaim({ text: results.synthesis.clinical_reasoning.text, sentence_ids: results.synthesis.clinical_reasoning.sentence_ids, evidence_ids: results.synthesis.clinical_reasoning.evidence_ids, aligned_spans: results.synthesis.clinical_reasoning.aligned_spans || [] })}
+                          >
+                            <div className="synth-section-title">Clinical Reasoning</div>
+                            <p className="synth-text" style={{ fontSize: "0.95rem" }}>
+                              {results.synthesis.clinical_reasoning.text}
+                              {results.synthesis.clinical_reasoning.sentence_ids && results.synthesis.clinical_reasoning.sentence_ids.map((sid, s_idx) => (
+                                <span key={s_idx} className="citation-reference">{sid}</span>
+                              ))}
+                            </p>
+                          </div>
+                        )}
+
+                        {results.synthesis.supporting_evidence && results.synthesis.supporting_evidence.length > 0 && (
+                          <div className="synth-section glass">
+                            <div className="synth-section-title">Supporting Evidence</div>
+                            {results.synthesis.supporting_evidence.map((ev, idx) => (
+                              <div 
+                                key={idx} 
+                                className="synth-evidence-card glass-interactive"
+                                onClick={() => setActiveClaim({ text: ev.text, sentence_ids: ev.sentence_ids, evidence_ids: ev.evidence_ids, aligned_spans: ev.aligned_spans || [] })}
+                              >
+                                <p className="synth-text" style={{ fontSize: "0.95rem" }}>
+                                  {ev.text}
+                                  {ev.evidence_ids && ev.evidence_ids.map((eid, e_idx) => (
+                                    <span key={e_idx} className="citation-reference">{eid}</span>
+                                  ))}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {results.synthesis.alternatives && (
+                          <div 
+                            className="synth-section alternatives glass glass-interactive"
+                            onClick={() => setActiveClaim({ text: results.synthesis.alternatives.text, sentence_ids: results.synthesis.alternatives.sentence_ids, evidence_ids: results.synthesis.alternatives.evidence_ids, aligned_spans: results.synthesis.alternatives.aligned_spans || [] })}
+                          >
+                            <div className="synth-section-title">Alternatives / Considerations</div>
+                            <p className="synth-text" style={{ fontSize: "0.95rem" }}>
+                              {results.synthesis.alternatives.text}
+                              {results.synthesis.alternatives.sentence_ids && results.synthesis.alternatives.sentence_ids.map((sid, s_idx) => (
+                                <span key={s_idx} className="citation-reference">{sid}</span>
+                              ))}
+                            </p>
+                          </div>
+                        )}
+
+                        {results.synthesis.bottom_line && (
+                          <div 
+                            className="synth-section bottom-line glass-interactive"
+                            style={{ padding: "1.25rem", borderRadius: "12px", cursor: "pointer" }}
+                            onClick={() => setActiveClaim({ text: results.synthesis.bottom_line.text, sentence_ids: results.synthesis.bottom_line.sentence_ids, evidence_ids: results.synthesis.bottom_line.evidence_ids, aligned_spans: results.synthesis.bottom_line.aligned_spans || [] })}
+                          >
+                            <div className="synth-section-title" style={{ color: "var(--accent-emerald)" }}>Bottom Line</div>
+                            <p className="synth-text" style={{ fontWeight: "500" }}>
+                              {results.synthesis.bottom_line.text}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Hover over or select a verified claim card to map and view exact database coordinate highlights.</p>
+                      results.direct_answer_claims && results.direct_answer_claims.map((claim, idx) => {
+                        const failedVal = !claim.numeric_validation_passed;
+                        return (
+                          <div 
+                            key={idx}
+                            className={`claim-card glass glass-interactive ${failedVal ? "failed-validation" : "verified"}`}
+                            onMouseEnter={() => setActiveClaim(claim)}
+                            onClick={() => setActiveClaim(claim)}
+                          >
+                            <div className="claim-header">
+                              <span style={{ color: "var(--text-muted)", fontSize: "0.85rem", fontWeight: "600" }}>CLAIM #{idx + 1}</span>
+                              <span className={`status-badge ${failedVal ? "failed" : "verified"}`}>
+                                {failedVal ? "Hallucination Alert" : "Verified Source Grounded"}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                              {claim.text}
+                              {claim.sentence_ids && claim.sentence_ids.map((sid, s_idx) => (
+                                <span key={s_idx} className="citation-reference">{sid}</span>
+                              ))}
+                            </p>
+                          </div>
+                        );
+                      })
                     )}
+
+                    {/* Rejected Citation Safety Audit */}
+                    {results.rejected_citations && results.rejected_citations.length > 0 && (
+                      <div className="rejected-citations-panel glass">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                          <span style={{ color: "var(--accent-rose)", fontWeight: "600", fontSize: "0.95rem" }}>
+                            🛡️ Population Safety Filter Audit ({results.rejected_citations.length} Citations Excluded)
+                          </span>
+                        </div>
+                        <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+                          The clinical safety validator rejected the following citations due to population or biomarker subgroup mismatches:
+                        </p>
+                        {results.rejected_citations.map((rejCit, rIdx) => (
+                          <div key={rIdx} className="rejected-citation-item">
+                            <div style={{ fontWeight: "600", color: "var(--text-primary)" }}>
+                              Citation {rejCit.evidence_id} ({rejCit.pmcid})
+                            </div>
+                            <div style={{ color: "var(--accent-rose)", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                              Reason: {rejCit.rejection_reason}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Grounding Source Coordinates Panel */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <h2 style={{ fontSize: "1.25rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>
+                      Source Verification Spans
+                    </h2>
+                    <div className="source-highlight-panel glass" style={{ height: "400px", overflowY: "auto" }}>
+                      {activeClaim && activeClaim.aligned_spans && activeClaim.aligned_spans.length > 0 ? (
+                        activeClaim.aligned_spans.map((span, s_idx) => (
+                          <div key={s_idx}>
+                            {renderHighlightedText(span)}
+                          </div>
+                        ))
+                      ) : activeClaim && activeClaim.evidence_ids && activeClaim.evidence_ids.length > 0 ? (
+                        <div className="glass" style={{ padding: "1.25rem" }}>
+                          <p style={{ color: "var(--text-secondary)", marginBottom: "0.75rem", fontSize: "0.95rem" }}>
+                            Source spans for this section are available via the following evidence IDs:
+                          </p>
+                          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                            {activeClaim.evidence_ids.map((id, i) => (
+                              <span key={i} className="citation-reference" style={{ marginLeft: 0 }}>{id}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Hover over or select a verified claim card or synthesis section to map and view exact database coordinate highlights.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -589,7 +882,7 @@ export default function Home() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                     <div>
                       <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>NORMALIZED QUERY</span>
-                      <p style={{ fontSize: "1rem", fontFamily: "monospace", color: "#e2e8f0" }}>{traceDetails.normalization_context.query_text || traceDetails.query}</p>
+                      <p style={{ fontSize: "1rem", fontFamily: "monospace", color: "var(--text-primary)" }}>{traceDetails.normalization_context.query_text || traceDetails.query}</p>
                     </div>
                   </div>
                 </div>
@@ -611,7 +904,7 @@ export default function Home() {
                         <td style={{ fontFamily: "monospace" }}>#{idx + 1}</td>
                         <td style={{ fontFamily: "monospace" }}>{chunkId}</td>
                         <td>
-                          <span style={{ background: "rgba(0, 238, 255, 0.1)", color: "var(--accent-cyan)", fontSize: "0.75rem", padding: "0.2rem 0.5rem", borderRadius: "4px" }}>
+                          <span style={{ background: "var(--surface-blue-tint)", color: "var(--accent-blue)", fontSize: "0.75rem", padding: "0.2rem 0.5rem", borderRadius: "4px", border: "1px solid rgba(37, 99, 235, 0.2)" }}>
                             Dense-Sparse Fused Candidate
                           </span>
                         </td>

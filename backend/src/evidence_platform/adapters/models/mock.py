@@ -74,46 +74,111 @@ class MockRerankerClient(RerankerClient):
         return scores
 
 
+# ---------------------------------------------------------------------------
+# Clinical context modifier detection for mock synthesis
+# ---------------------------------------------------------------------------
+_CLINICAL_MODIFIERS = [
+    # Molecular markers
+    ("HER2", r"\bher2\b|\bher-2\b|\berbb2\b"),
+    ("EGFR", r"\begfr\b"),
+    ("KRAS wild-type", r"\bkras\s*(?:wild[- ]?type|wt)\b"),
+    ("KRAS mutant", r"\bkras\s*(?:mut|mutant|mutation)\b"),
+    ("NRAS", r"\bnras\b"),
+    ("RAS wild-type", r"\bras\s*(?:wild[- ]?type|wt)\b"),
+    ("BRAF V600E", r"\bbraf\b"),
+    ("MSI-H/dMMR", r"\bmsi[- ]?h\b|\bdmmr\b|\bmicrosatellite\s*instability\b"),
+    ("MSS/pMMR", r"\bmss\b|\bpmmr\b|\bmicrosatellite\s*stable\b"),
+    ("ALK", r"\balk\b"),
+    ("PD-L1", r"\bpd[- ]?l1\b"),
+    # Tumor characteristics
+    ("left-sided", r"\bleft[- ]?sided\b"),
+    ("right-sided", r"\bright[- ]?sided\b"),
+    ("metastatic", r"\bmetastatic\b|\badvanced\b|\bstage\s*iv\b"),
+    # Lines of therapy
+    ("first-line", r"\bfirst[- ]?line\b|\b1l\b|\bfront[- ]?line\b"),
+    ("second-line", r"\bsecond[- ]?line\b|\b2l\b"),
+    ("third-line", r"\bthird[- ]?line\b|\b3l\b"),
+    # Performance / function
+    ("ECOG PS", r"\becog\b|\bperformance\s*status\b"),
+    ("renal impairment", r"\brenal\b|\bkidney\b"),
+    ("hepatic impairment", r"\bhepatic\b|\bliver\b"),
+]
+
+
+def _detect_modifiers(text: str) -> list[str]:
+    """Scan text for clinically relevant modifiers."""
+    found = []
+    lower = text.lower()
+    for label, pattern in _CLINICAL_MODIFIERS:
+        if re.search(pattern, lower):
+            found.append(label)
+    return found
+
+
+def _infer_study_hierarchy(chunks: list[dict[str, Any]]) -> tuple[str, str]:
+    """Determine recommendation strength and evidence quality from study types present."""
+    types = {c.get("study_type", "other").lower().strip() for c in chunks}
+
+    if "guideline" in types:
+        return "Strong", "High"
+    if "meta_analysis" in types or "systematic_review" in types:
+        return "Strong", "Moderate"
+    if "rct" in types:
+        return "Conditional", "Moderate"
+    if "cohort_study" in types:
+        return "Conditional", "Low"
+    return "Conditional", "Very Low"
+
+
 class MockLLMClient(LLMClient):
-    """Mock LLM client that generates structured grounding-compliant answers."""
+    """Mock LLM client that generates structured evidence-synthesis-compliant answers."""
 
     async def generate_answer(self, query: str, evidence_bundle: dict[str, Any]) -> dict[str, Any]:
-        # evidence_bundle format: {"snapshot_id": str, "chunks": [{"id": str, "text": str, "evidence_id": str, ...}]}
+        # evidence_bundle format: {"snapshot_id": str, "chunks": [{"id": str, "text": str, "evidence_id": str, "study_type": str, ...}]}
         chunks = evidence_bundle.get("chunks", [])
         
         # Test for abstention triggers
         if "abstain" in query.lower() or not chunks:
             return {
                 "status": "insufficient_evidence",
+                "recommendation": None,
+                "clinical_reasoning": None,
+                "supporting_evidence": [],
+                "alternatives": None,
+                "bottom_line": None,
+                "clinical_context": None,
+                "evidence_certainty": None,
                 "direct_answer_claims": [],
                 "evidence_summary_claims": [],
                 "limitations_claims": [],
                 "abstention_reason": "No matching clinical trial evidence in active corpus snapshot."
             }
 
-        # Synthesize a direct answer using chunks
+        # --- Build atomic claims (legacy, for grounding pipeline) ---
         direct_claims = []
         limitations_claims = []
-        
+        all_evidence_ids = []
+        all_sentence_ids = []
+        first_sentences = []
+
         for idx, chunk in enumerate(chunks):
-            # Extract first sentence or segment of text
             chunk_text = chunk.get("text", "")
             sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", chunk_text) if s.strip()]
             first_sentence = sentences[0] if sentences else chunk_text[:60]
-            
+            first_sentences.append(first_sentence)
+
             evidence_id = chunk.get("evidence_id", f"E{idx+1:02d}")
-            # Mock a sentence_id (e.g. E01.S1)
             sentence_id = f"{evidence_id}.S1"
-            
+            all_evidence_ids.append(evidence_id)
+            all_sentence_ids.append(sentence_id)
+
             claim_text = f"According to study {evidence_id}, {first_sentence}"
-            # Ensure it links to the evidence ID
             direct_claims.append({
                 "text": claim_text,
                 "evidence_ids": [evidence_id],
                 "sentence_ids": [sentence_id]
             })
-            
-            # If the chunk refers to a small population or sample size, add a limitation
+
             if any(w in chunk_text.lower() for w in ["limit", "small", "n =", "patients"]):
                 limitations_claims.append({
                     "text": f"Trial {evidence_id} has limited sample size or population constraints.",
@@ -121,8 +186,78 @@ class MockLLMClient(LLMClient):
                     "sentence_ids": [sentence_id]
                 })
 
+        # --- Build synthesized sections ---
+        rec_strength, ev_quality = _infer_study_hierarchy(chunks)
+        detected_mods = _detect_modifiers(query)
+
+        # Recommendation: synthesize across all chunks
+        recommendation = {
+            "text": f"Based on the available evidence from {len(chunks)} source(s), {first_sentences[0]} This finding is supported across the reviewed literature.",
+            "evidence_ids": all_evidence_ids,
+            "sentence_ids": all_sentence_ids[:2],
+        }
+
+        # Clinical reasoning
+        study_types_present = list({c.get("study_type", "other") for c in chunks})
+        clinical_reasoning = {
+            "text": f"This recommendation is supported by evidence from {', '.join(study_types_present)} studies. The available data consistently supports this approach based on the evaluated clinical endpoints.",
+            "evidence_ids": all_evidence_ids,
+            "sentence_ids": all_sentence_ids[:2],
+        }
+
+        # Supporting evidence — one entry per chunk
+        supporting_evidence = []
+        for idx, chunk in enumerate(chunks):
+            evidence_id = chunk.get("evidence_id", f"E{idx+1:02d}")
+            sentence_id = f"{evidence_id}.S1"
+            supporting_evidence.append({
+                "text": first_sentences[idx] if idx < len(first_sentences) else "Supporting data available.",
+                "evidence_ids": [evidence_id],
+                "sentence_ids": [sentence_id],
+            })
+
+        # Alternatives
+        alternatives = {
+            "text": "Alternative treatment strategies should be considered based on individual patient characteristics, comorbidities, and treatment goals.",
+            "evidence_ids": [all_evidence_ids[0]] if all_evidence_ids else [],
+            "sentence_ids": [],
+        }
+
+        # Bottom line
+        bottom_line = {
+            "text": f"In summary, the evidence supports the clinical approach described, based on {len(chunks)} reviewed source(s).",
+            "evidence_ids": all_evidence_ids,
+            "sentence_ids": [],
+        }
+
+        # Clinical context
+        assumptions_parts = []
+        if not detected_mods:
+            assumptions_parts.append("No specific clinical modifiers were detected in the query. This recommendation is generalized and may need adjustment for specific molecular profiles or patient characteristics.")
+        else:
+            assumptions_parts.append(f"Clinical modifiers detected: {', '.join(detected_mods)}. Recommendation is contextualized to these modifiers.")
+
+        clinical_context = {
+            "detected_modifiers": detected_mods,
+            "assumptions": " ".join(assumptions_parts),
+        }
+
+        # Evidence certainty
+        evidence_certainty = {
+            "recommendation_strength": rec_strength,
+            "evidence_quality": ev_quality,
+            "evidence_ids": all_evidence_ids,
+        }
+
         return {
             "status": "answer",
+            "recommendation": recommendation,
+            "clinical_reasoning": clinical_reasoning,
+            "supporting_evidence": supporting_evidence,
+            "alternatives": alternatives,
+            "bottom_line": bottom_line,
+            "clinical_context": clinical_context,
+            "evidence_certainty": evidence_certainty,
             "direct_answer_claims": direct_claims,
             "evidence_summary_claims": [
                 {

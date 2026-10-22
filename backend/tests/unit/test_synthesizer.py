@@ -51,6 +51,17 @@ class TestAnswerSynthesizer(unittest.TestCase):
         self.assertTrue(len(res.direct_claims) > 0)
         self.assertEqual(res.direct_claims[0]["evidence_ids"], ["E01"])
 
+        # Verify synthesis sections are populated
+        self.assertIsNotNone(res.recommendation)
+        self.assertTrue(len(res.recommendation["text"]) > 0)
+        self.assertIsNotNone(res.bottom_line)
+        self.assertTrue(len(res.bottom_line["text"]) > 0)
+        self.assertIsNotNone(res.clinical_context)
+        self.assertIsNotNone(res.evidence_certainty)
+        self.assertIn(res.evidence_certainty["recommendation_strength"], ["Strong", "Conditional"])
+        self.assertIn(res.evidence_certainty["evidence_quality"], ["High", "Moderate", "Low", "Very Low"])
+        self.assertTrue(len(res.supporting_evidence) > 0)
+
     def test_synthesis_abstain(self):
         # Trigger mock LLM abstention by putting "abstain" in query
         res = asyncio.run(
@@ -63,6 +74,15 @@ class TestAnswerSynthesizer(unittest.TestCase):
         self.assertEqual(res.status, "insufficient_evidence")
         self.assertIsNotNone(res.abstention_reason)
         self.assertEqual(len(res.direct_claims), 0)
+
+        # Verify synthesis sections are empty/None on abstention
+        self.assertIsNone(res.recommendation)
+        self.assertIsNone(res.clinical_reasoning)
+        self.assertEqual(res.supporting_evidence, [])
+        self.assertIsNone(res.alternatives)
+        self.assertIsNone(res.bottom_line)
+        self.assertIsNone(res.clinical_context)
+        self.assertIsNone(res.evidence_certainty)
 
 
 if __name__ == "__main__":

@@ -7,10 +7,14 @@ from ...db.models.models import Chunk, EvidenceUnit, DocumentSection, SourceDocu
 from ...ports.models import EmbeddingClient
 from ...adapters.qdrant.qdrant_client import QdrantIndexClient
 from ..retrieval.normalization.normalizer import QueryNormalizer
+from ..clinical.clinical_intent import ClinicalQueryIntent
 
 logger = logging.getLogger("evidence_platform.retriever")
 
-class RetrievalCandidate(NamedTuple):
+from dataclasses import dataclass, field
+
+@dataclass
+class RetrievalCandidate:
     chunk_id: str
     qdrant_point_id: str
     text: str
@@ -20,6 +24,12 @@ class RetrievalCandidate(NamedTuple):
     study_type: str
     publication_date: str
     display_rights: bool
+    population_match_score: int = 0
+    paper_metadata: Any = None
+    hierarchy_rank: int = 11
+    hierarchy_weight: float = 1.0
+    hierarchy_label: str = ""
+    unfiltered_retrieval: bool = False
 
 
 class RetrievalDebugInfo(NamedTuple):
@@ -30,6 +40,7 @@ class RetrievalDebugInfo(NamedTuple):
     dense_vector_dim: int
     sparse_term_count: int
     pre_rerank_candidates: list[dict[str, Any]]
+    clinical_intent: Any = None
 
 
 class HybridRetriever:
@@ -48,7 +59,7 @@ class HybridRetriever:
         self.normalizer = QueryNormalizer()
         self.rrf_k = rrf_k
 
-    def _mock_local_retrieval(self, query_text: str, filters: dict[str, Any], limit: int) -> list[RetrievalCandidate]:
+    def _mock_local_retrieval(self, query_text: str, filters: dict[str, Any], limit: int, clinical_intent: Any = None) -> list[RetrievalCandidate]:
         """Offline mock search using simple term-matching on database chunks."""
         logger.info("[Mock Retriever] Performing fallback database term matching.")
         
@@ -140,6 +151,12 @@ class HybridRetriever:
             matched_drug = sum(1 for kw in key_drug_terms if kw in text_lower or kw in title_lower)
 
             score = (matched_drug * 50.0) + (matched_rare * 10.0) + float(matched_common)
+            
+            if clinical_intent:
+                if getattr(clinical_intent, 'disease', None) and clinical_intent.disease.lower() in text_lower:
+                    score += 20.0
+                if getattr(clinical_intent, 'biomarker_status', None) and clinical_intent.biomarker_status.lower() in text_lower:
+                    score += 20.0
 
             if score > 0:
                 scored_candidates.append(
@@ -176,7 +193,8 @@ class HybridRetriever:
         self,
         query: str,
         filters: dict[str, Any] | None = None,
-        limit: int = 50
+        limit: int = 50,
+        clinical_intent: ClinicalQueryIntent | None = None
     ) -> tuple[list[RetrievalCandidate], RetrievalDebugInfo]:
         """Perform query normalization, rewriting, hybrid vector search, RRF fusion, and metadata hydration."""
         import time
@@ -214,7 +232,7 @@ class HybridRetriever:
 
         if use_sql_fallback:
             t0 = time.perf_counter()
-            cands = self._mock_local_retrieval(search_query_text, filters, limit)
+            cands = self._mock_local_retrieval(search_query_text, filters, limit, clinical_intent)
             t_sql = time.perf_counter() - t0
             logger.info(
                 "[Retrieval] SQL fallback complete: %d candidates in %.4fs",
@@ -227,7 +245,8 @@ class HybridRetriever:
                 expanded_terms=norm_res.expanded_terms,
                 dense_vector_dim=0,
                 sparse_term_count=0,
-                pre_rerank_candidates=[{"chunk_id": c.chunk_id, "score": c.score, "pmcid": c.pmcid} for c in cands]
+                pre_rerank_candidates=[{"chunk_id": c.chunk_id, "score": c.score, "pmcid": c.pmcid} for c in cands],
+                clinical_intent=clinical_intent
             )
             return cands, debug
 
@@ -260,7 +279,20 @@ class HybridRetriever:
                 range=qmodels.Range(gte=int(filters["year_from"]))
             ))
 
-        filter_obj = qmodels.Filter(must=qdrant_filters)
+        should_filters = []
+        if clinical_intent:
+            if getattr(clinical_intent, "disease", None):
+                should_filters.append(qmodels.FieldCondition(
+                    key="disease",
+                    match=qmodels.MatchValue(value=clinical_intent.disease)
+                ))
+            if getattr(clinical_intent, "biomarker_status", None):
+                should_filters.append(qmodels.FieldCondition(
+                    key="biomarker",
+                    match=qmodels.MatchValue(value=clinical_intent.biomarker_status)
+                ))
+
+        filter_obj = qmodels.Filter(must=qdrant_filters, should=should_filters if should_filters else None)
 
         loop = asyncio.get_running_loop()
         fetch_limit = max(100, limit * 2)
@@ -318,6 +350,21 @@ class HybridRetriever:
             logger.info(f"Sparse search returned {len(sparse_hits)} hits.")
         except Exception as e:
             logger.warning(f"Sparse search failed (proceeding with dense only): {e}")
+            
+        unfiltered_retrieval_flag = False
+        if (len(dense_hits) + len(sparse_hits)) < 5 and should_filters:
+            logger.info("[Retrieval] Fewer than 5 results with clinical intent filters. Retrying without 'should' filters.")
+            filter_obj = qmodels.Filter(must=qdrant_filters)
+            unfiltered_retrieval_flag = True
+            try:
+                dense_hits = await loop.run_in_executor(None, run_dense_search)
+            except Exception:
+                pass
+            try:
+                sparse_hits = await loop.run_in_executor(None, run_sparse_search)
+            except Exception:
+                pass
+
         t_search = time.perf_counter() - t0
 
         if not dense_hits and not sparse_hits:
@@ -327,7 +374,7 @@ class HybridRetriever:
                 t_search,
             )
             t0 = time.perf_counter()
-            cands = self._mock_local_retrieval(search_query_text, filters, limit)
+            cands = self._mock_local_retrieval(search_query_text, filters, limit, clinical_intent)
             t_sql = time.perf_counter() - t0
             logger.info(
                 "[Retrieval] SQL fallback complete: %d candidates in %.4fs",
@@ -340,7 +387,8 @@ class HybridRetriever:
                 expanded_terms=norm_res.expanded_terms,
                 dense_vector_dim=len(dense) if 'dense' in locals() else 0,
                 sparse_term_count=len(sparse.get("indices", [])) if 'sparse' in locals() else 0,
-                pre_rerank_candidates=[{"chunk_id": c.chunk_id, "score": c.score, "pmcid": c.pmcid} for c in cands]
+                pre_rerank_candidates=[{"chunk_id": c.chunk_id, "score": c.score, "pmcid": c.pmcid} for c in cands],
+                clinical_intent=clinical_intent
             )
             return cands, debug
 
@@ -377,7 +425,8 @@ class HybridRetriever:
                     pmcid=doc.pmcid,
                     study_type=rev.study_type,
                     publication_date=doc.publication_date,
-                    display_rights=doc.display_rights
+                    display_rights=doc.display_rights,
+                    unfiltered_retrieval=unfiltered_retrieval_flag
                 )
                 candidates.append(cand)
                 pre_rerank_debug_list.append({
@@ -403,7 +452,8 @@ class HybridRetriever:
             expanded_terms=norm_res.expanded_terms,
             dense_vector_dim=len(dense),
             sparse_term_count=len(sparse.get("indices", [])),
-            pre_rerank_candidates=pre_rerank_debug_list
+            pre_rerank_candidates=pre_rerank_debug_list,
+            clinical_intent=clinical_intent
         )
 
         return candidates, debug
@@ -412,7 +462,8 @@ class HybridRetriever:
         self,
         query: str,
         filters: dict[str, Any] | None = None,
-        limit: int = 50
+        limit: int = 50,
+        clinical_intent: ClinicalQueryIntent | None = None
     ) -> list[RetrievalCandidate]:
-        candidates, _ = await self.retrieve_with_debug(query, filters, limit)
+        candidates, _ = await self.retrieve_with_debug(query, filters, limit, clinical_intent)
         return candidates

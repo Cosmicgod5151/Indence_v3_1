@@ -1,0 +1,158 @@
+{
+  "version": "1.0.0",
+  "description": "Gold evaluation dataset for evidence synthesis quality across oncology, cardiology, diabetes, and infectious disease.",
+  "queries": [
+    {
+      "id": "synth_onc_01",
+      "specialty": "oncology",
+      "question": "What is the preferred first-line therapy for left-sided RAS wild-type metastatic colorectal cancer?",
+      "filters": {"study_types": ["rct", "guideline"], "year_from": 2018},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["anti-EGFR", "cetuximab", "panitumumab", "left-sided"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": ["left-sided", "RAS wild-type", "metastatic", "first-line"],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Moderate"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": true,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_onc_02",
+      "specialty": "oncology",
+      "question": "Should pembrolizumab be used as first-line therapy in MSI-H metastatic colorectal cancer?",
+      "filters": {"study_types": ["rct", "guideline"], "year_from": 2020},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["pembrolizumab", "MSI-H", "dMMR", "immunotherapy"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": ["MSI-H/dMMR", "metastatic", "first-line"],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Moderate"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": true,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_card_01",
+      "specialty": "cardiology",
+      "question": "Should SGLT2 inhibitors be prescribed for patients with heart failure with reduced ejection fraction regardless of diabetes status?",
+      "filters": {"study_types": ["rct", "guideline", "meta_analysis"], "year_from": 2019},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["SGLT2", "dapagliflozin", "empagliflozin", "HFrEF"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": [],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Moderate"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": true,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_card_02",
+      "specialty": "cardiology",
+      "question": "What is the target blood pressure for hypertensive patients with diabetes and chronic kidney disease?",
+      "filters": {"study_types": ["guideline", "rct"], "year_from": 2017},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["blood pressure", "target", "ACE", "ARB"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": ["renal impairment"],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Moderate"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": false,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_dm_01",
+      "specialty": "diabetes",
+      "question": "What is the recommended first-line pharmacologic therapy for newly diagnosed type 2 diabetes mellitus?",
+      "filters": {"study_types": ["guideline"], "year_from": 2020},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["metformin", "first-line"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": ["first-line"],
+        "expected_certainty": {"min_strength": "Strong", "min_quality": "High"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": false,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_dm_02",
+      "specialty": "diabetes",
+      "question": "When should GLP-1 receptor agonists be preferred over SGLT2 inhibitors as add-on to metformin in type 2 diabetes?",
+      "filters": {"study_types": ["guideline", "rct"], "year_from": 2020},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["GLP-1", "SGLT2", "cardiovascular", "renal"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": [],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Moderate"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": false,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_id_01",
+      "specialty": "infectious_disease",
+      "question": "What is the recommended empiric antibiotic regimen for community-acquired pneumonia requiring hospitalization?",
+      "filters": {"study_types": ["guideline", "meta_analysis", "rct"], "year_from": 2019},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["beta-lactam", "macrolide", "fluoroquinolone", "CAP"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": [],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Moderate"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": false,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    },
+    {
+      "id": "synth_id_02",
+      "specialty": "infectious_disease",
+      "question": "Should empiric MRSA coverage be added for patients with severe community-acquired pneumonia admitted to the ICU?",
+      "filters": {"study_types": ["guideline", "rct"], "year_from": 2019},
+      "expected_synthesis": {
+        "recommendation_present": true,
+        "should_mention": ["MRSA", "vancomycin", "linezolid", "ICU"],
+        "should_discuss_alternatives": true,
+        "expected_modifiers": [],
+        "expected_certainty": {"min_strength": "Conditional", "min_quality": "Low"}
+      },
+      "quality_criteria": {
+        "no_redundant_claims": true,
+        "quantitative_evidence_required": false,
+        "assumptions_explicit": true,
+        "alternatives_discussed": true
+      }
+    }
+  ]
+}

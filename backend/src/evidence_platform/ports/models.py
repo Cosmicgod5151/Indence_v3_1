@@ -34,15 +34,30 @@ class RerankerClient(Protocol):
 
 
 class LLMClient(Protocol):
-    """Protocol for generating structured, evidence-grounded answers."""
+    """Protocol for generating structured, evidence-grounded answers with clinical synthesis."""
 
     async def generate_answer(self, query: str, evidence_bundle: dict[str, Any]) -> dict[str, Any]:
-        """Generate a structured answer from a query and a closed evidence bundle.
-        
+        """Generate a structured, synthesized answer from a query and a closed evidence bundle.
+
         Returns:
             A dict conforming to the structured output contract:
             {
                 "status": "answer | insufficient_evidence",
+
+                # Evidence synthesis sections (each with span-level grounding)
+                "recommendation": {"text": str, "evidence_ids": list[str], "sentence_ids": list[str]} | None,
+                "clinical_reasoning": {"text": str, "evidence_ids": list[str], "sentence_ids": list[str]} | None,
+                "supporting_evidence": [{"text": str, "evidence_ids": list[str], "sentence_ids": list[str]}],
+                "alternatives": {"text": str, "evidence_ids": list[str], "sentence_ids": list[str]} | None,
+                "bottom_line": {"text": str, "evidence_ids": list[str], "sentence_ids": list[str]} | None,
+                "clinical_context": {"detected_modifiers": list[str], "assumptions": str} | None,
+                "evidence_certainty": {
+                    "recommendation_strength": "Strong | Conditional",
+                    "evidence_quality": "High | Moderate | Low | Very Low",
+                    "evidence_ids": list[str]
+                } | None,
+
+                # Legacy claim arrays (preserved for grounding pipeline compatibility)
                 "direct_answer_claims": [{"text": str, "evidence_ids": list[str], "sentence_ids": list[str]}],
                 "evidence_summary_claims": [...],
                 "limitations_claims": [...],

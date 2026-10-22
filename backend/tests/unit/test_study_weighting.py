@@ -29,14 +29,18 @@ class TestStudyTypeWeighting(unittest.TestCase):
             score=0.8, document_id="doc-obs", pmcid="PMC888",
             study_type="observational", publication_date="2022", display_rights=True
         )
+        setattr(self.obs_candidate, "hierarchy_weight", 1.4)
+        setattr(self.obs_candidate, "population_match_score", 0.0)
 
-        # Candidate 2: RCT study with IDENTICAL text (so raw rerank score is exactly the same!)
+        # Candidate 2: RCT study with IDENTICAL text (higher hierarchy weight 2.2 vs 1.4!)
         self.rct_candidate = RetrievalCandidate(
             chunk_id="chunk-rct", qdrant_point_id="pt-rct",
             text="Study text representing clinical outcomes of the drug.",
             score=0.8, document_id="doc-rct", pmcid="PMC999",
             study_type="rct", publication_date="2022", display_rights=True
         )
+        setattr(self.rct_candidate, "hierarchy_weight", 2.2)
+        setattr(self.rct_candidate, "population_match_score", 0.0)
 
     def test_rct_priority_over_observational(self):
         candidates = [self.obs_candidate, self.rct_candidate]

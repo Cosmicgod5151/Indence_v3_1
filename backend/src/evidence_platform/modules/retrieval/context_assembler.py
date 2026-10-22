@@ -24,7 +24,7 @@ class AssembledContext(NamedTuple):
 
 
 class ContextAssembler:
-    """Reranks retrieval candidates and selects diverse chunks under a token budget using MMR."""
+    """Reranks retrieval candidates and selects diverse chunks under a token budget using MMR, Population Matching, and Evidence Hierarchy."""
 
     def __init__(
         self,
@@ -45,7 +45,10 @@ class ContextAssembler:
         if not candidates:
             return AssembledContext("", [], 0)
 
-        # Study-type weights for evidence prioritization
+        # 1. Rerank all candidates using the Cross-Encoder Reranker
+        passage_texts = [c.text for c in candidates]
+        raw_rerank_scores = await self.reranker_client.rerank(query, passage_texts)
+        
         STUDY_TYPE_WEIGHTS = {
             "guideline": 1.35,
             "meta_analysis": 1.3,
@@ -57,31 +60,36 @@ class ContextAssembler:
             "other": 1.0
         }
 
-        # 1. Rerank all candidates using the Cross-Encoder Reranker
-        passage_texts = [c.text for c in candidates]
-        raw_rerank_scores = await self.reranker_client.rerank(query, passage_texts)
-        
-        # Apply study-type weight boosting
-        rerank_scores = []
-        for candidate, score in zip(candidates, raw_rerank_scores):
+        # Combine Cross-Encoder Reranker score with Population Match Score and Evidence Hierarchy Weight
+        combined_scores = []
+        for candidate, raw_score in zip(candidates, raw_rerank_scores):
             st = (candidate.study_type or "other").lower().strip()
-            weight = STUDY_TYPE_WEIGHTS.get(st, 1.0)
-            rerank_scores.append(score * weight)
-        
-        # Zip candidates with their rerank scores
-        candidate_scores = list(zip(candidates, rerank_scores))
+            # Population Match Score factor (+100 to -300)
+            pop_score = getattr(candidate, "population_match_score", 0)
+            # Hierarchy Weight factor (0.5 to 2.5)
+            h_weight = getattr(candidate, "hierarchy_weight", STUDY_TYPE_WEIGHTS.get(st, 1.0))
+
+            # Reranker similarity alone CANNOT override negative population score!
+            if pop_score < -100:
+                adjusted_score = -999.0
+            elif pop_score < 0:
+                adjusted_score = (raw_score * 0.2) + (pop_score * 0.05) + (h_weight * 0.3)
+            else:
+                adjusted_score = (raw_score * 0.3) + (pop_score * 0.004) + (h_weight * 0.4)
+                
+            combined_scores.append(adjusted_score)
         
         # 2. Get dense embeddings for candidates to perform MMR diversity check
         embeddings = await self.embedding_client.embed_documents(passage_texts)
         candidate_vectors = [dense for dense, _ in embeddings]
 
-        # Normalize rerank scores to [0, 1] for balanced MMR calculation
-        min_score = min(rerank_scores) if rerank_scores else 0.0
-        max_score = max(rerank_scores) if rerank_scores else 1.0
+        # Normalize combined scores to [0, 1] for MMR calculation
+        min_score = min(combined_scores) if combined_scores else 0.0
+        max_score = max(combined_scores) if combined_scores else 1.0
         score_range = max_score - min_score if max_score != min_score else 1.0
 
         normalized_scores = [
-            (score - min_score) / score_range for score in rerank_scores
+            (score - min_score) / score_range for score in combined_scores
         ]
 
         # 3. Perform Maximal Marginal Relevance (MMR) selection loop
@@ -90,6 +98,8 @@ class ContextAssembler:
         
         current_tokens = 0
         selected_candidates: list[RetrievalCandidate] = []
+        selected_pmcid_outcomes: dict[str, set[str]] = {}
+        outcome_keywords = {"PFS", "OS", "ORR"}
 
         while remaining_indices:
             best_mmr_score = -float("inf")
@@ -106,7 +116,7 @@ class ContextAssembler:
                         for s_idx in selected_indices
                     )
                 
-                # MMR formula: lambda * relevance - (1 - lambda) * redundancy
+                # MMR formula
                 mmr_score = self.lambda_val * relevance - (1.0 - self.lambda_val) * redundancy
                 
                 if mmr_score > best_mmr_score:
@@ -116,27 +126,61 @@ class ContextAssembler:
             if best_idx == -1:
                 break
 
-            # Check if this item fits in the token budget
+            # Check if candidate fits in token budget and is not severely mismatched
             candidate = candidates[best_idx]
-            cand_tokens = count_tokens(candidate.text)
-            
-            if current_tokens + cand_tokens <= max_tokens_budget:
-                selected_indices.append(best_idx)
-                selected_candidates.append(candidate)
-                current_tokens += cand_tokens
+            pop_score = getattr(candidate, "population_match_score", 0)
+
+            if pop_score >= -50:
+                pmcid = getattr(candidate, "pmcid", "") or ""
+                cand_text = candidate.text.upper()
+                cand_outcomes = {kw for kw in outcome_keywords if kw in cand_text}
+                
+                allow_selection = True
+                if pmcid and pmcid in selected_pmcid_outcomes:
+                    existing_outcomes = selected_pmcid_outcomes[pmcid]
+                    if not (cand_outcomes - existing_outcomes):
+                        allow_selection = False
+                
+                if allow_selection:
+                    cand_tokens = count_tokens(candidate.text)
+                    if current_tokens + cand_tokens <= max_tokens_budget:
+                        selected_indices.append(best_idx)
+                        selected_candidates.append(candidate)
+                        current_tokens += cand_tokens
+                        if pmcid:
+                            if pmcid not in selected_pmcid_outcomes:
+                                selected_pmcid_outcomes[pmcid] = set()
+                            selected_pmcid_outcomes[pmcid].update(cand_outcomes)
                 
             remaining_indices.remove(best_idx)
 
-        # 4. Sort selected candidates hierarchically:
-        # Group by study/document, then preserve natural section ordering to maintain coherence
-        # Sort key: (pmcid, study_type, chunk_id)
-        selected_candidates.sort(key=lambda x: (x.pmcid or "", x.study_type or "", x.chunk_id or ""))
+        # 4. Sort selected candidates by Evidence Hierarchy Rank (1 is highest), then study weight
+        STUDY_TYPE_RANKS = {
+            "guideline": 1,
+            "rct": 2,
+            "phase_3_rct": 2,
+            "meta_analysis": 3,
+            "systematic_review": 4,
+            "cohort_study": 5,
+            "observational": 6,
+            "case_report": 7,
+            "other": 8
+        }
+        def get_cand_rank(c):
+            if hasattr(c, "hierarchy_rank"):
+                return getattr(c, "hierarchy_rank")
+            st = (getattr(c, "study_type", "") or "other").lower().strip()
+            return STUDY_TYPE_RANKS.get(st, 8)
 
-        # 5. Format the assembled context text block
+        selected_candidates.sort(key=lambda x: (get_cand_rank(x), getattr(x, "pmcid", "") or "", getattr(x, "chunk_id", "") or ""))
+
+        # 5. Format assembled context block
         context_blocks = []
         for c in selected_candidates:
-            # Format header for grounding reference
-            ref_header = f"[Source: {c.pmcid} | Study Type: {c.study_type}]"
+            h_label = getattr(c, "hierarchy_label", c.study_type or "Evidence")
+            h_rank = get_cand_rank(c)
+            pop_score = getattr(c, "population_match_score", 0)
+            ref_header = f"[Source: {c.pmcid} | Hierarchy Rank: {h_rank} ({h_label}) | PopMatchScore: {pop_score}]"
             context_blocks.append(f"{ref_header}\n{c.text}\n")
 
         assembled_text = "\n".join(context_blocks)

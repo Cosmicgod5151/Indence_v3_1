@@ -13,14 +13,49 @@ class AbstentionLayer:
         self.entailment_client = entailment_client
         self.min_entailment_ratio = min_entailment_ratio
 
+    def population_quality_check(
+        self, candidates: list[RetrievalCandidate], intent: Any
+    ) -> tuple[bool, str, bool]:
+        """
+        Check if population quality is sufficient.
+        Returns: (passed_check, abstention_reason, all_low_quality)
+        """
+        if not candidates or len(candidates) < 2:
+            return False, "Insufficient population-matched evidence", False
+
+        all_low_quality = True
+        for cand in candidates:
+            meta = getattr(cand, "paper_metadata", None)
+            rank = getattr(meta, "hierarchy_rank", 10) if meta else 10
+            if rank < 9:
+                all_low_quality = False
+                break
+
+        return True, "", all_low_quality
+
     async def verify_and_calibrate(
         self,
         status: str,
         direct_claims: list[dict[str, Any]],
         evidence_map: dict[str, RetrievalCandidate],
-        abstention_reason: str | None = None
+        abstention_reason: str | None = None,
+        candidates: list[RetrievalCandidate] | None = None,
+        intent: Any = None
     ) -> tuple[str, list[dict[str, Any]], str | None]:
         """Perform parallel NLI checks on all claims. Trigger abstention if grounding ratio is too low."""
+        # 0. Population quality check
+        if candidates is not None and intent is not None:
+            passed, pop_reason, all_low = self.population_quality_check(candidates, intent)
+            if not passed:
+                return "insufficient_evidence", [], pop_reason
+            if all_low:
+                # lower confidence, add limitation note to claims
+                for claim in direct_claims:
+                    if "limitations" not in claim:
+                        claim["limitations"] = []
+                    if isinstance(claim["limitations"], list):
+                        claim["limitations"].append("All remaining evidence is Case Series or lower quality.")
+
         # 1. If already in abstention state, pass through
         if status == "insufficient_evidence":
             return status, direct_claims, abstention_reason or "Insufficient evidence to answer query."
