@@ -110,8 +110,9 @@ def safety_chart():
     ax.invert_yaxis()
     ax.set_xlim(0, 1.12)
     ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
-    ax.set_title(f"Safety & grounding — same generator ({d['generator_model'].split(',')[0].split(':')[-1]}), "
-                 f"{d['n_items']} questions", loc="left")
+    ax.set_title(f"Safety & grounding on {d['n_items']} questions\n"
+                 f"all systems use the same generator: {d['generator_model'].split(',')[0].split(':')[-1].split('#')[0].strip()}",
+                 loc="left")
     ax.legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.07))
     ax.grid(axis="x", color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
