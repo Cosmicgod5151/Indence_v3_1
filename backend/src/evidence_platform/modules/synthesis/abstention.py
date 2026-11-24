@@ -12,6 +12,7 @@ class AbstentionLayer:
     def __init__(self, entailment_client: EntailmentClient, min_entailment_ratio: float = 0.5) -> None:
         self.entailment_client = entailment_client
         self.min_entailment_ratio = min_entailment_ratio
+        self.last_verifier_meta: dict[str, Any] = {}
 
     def population_quality_check(
         self, candidates: list[RetrievalCandidate], intent: Any
@@ -90,8 +91,27 @@ class AbstentionLayer:
 
         # Batched NLI: one call verifies every claim when the client supports it;
         # otherwise fall back to concurrent per-claim checks.
+        detailed_fn = getattr(self.entailment_client, "check_entailment_batch_detailed", None)
         batch_fn = getattr(self.entailment_client, "check_entailment_batch", None)
-        if batch_fn is not None:
+        if detailed_fn is not None:
+            logger.info(f"Running calibrated batched verification for {len(direct_claims)} claims...")
+            pairs, idx_with_premise = [], []
+            for i, claim in enumerate(direct_claims):
+                premise = " ".join(evidence_map[e].text for e in claim.get("evidence_ids", []) if e in evidence_map)
+                if premise:
+                    pairs.append((premise, claim.get("text", "")))
+                    idx_with_premise.append(i)
+            details = await detailed_fn(pairs) if pairs else []
+            by_idx = dict(zip(idx_with_premise, details))
+            verified_claims = []
+            for i, claim in enumerate(direct_claims):
+                enriched = dict(claim)
+                d = by_idx.get(i, {"label": "neutral", "confidence": None, "probabilities": {}})
+                enriched["entailment_status"] = d["label"]
+                enriched["entailment_confidence"] = d.get("confidence")
+                enriched["entailment_probabilities"] = d.get("probabilities")
+                verified_claims.append(enriched)
+        elif batch_fn is not None:
             logger.info(f"Running batched NLI verification for {len(direct_claims)} claims...")
             pairs, idx_with_premise = [], []
             for i, claim in enumerate(direct_claims):
@@ -111,6 +131,8 @@ class AbstentionLayer:
         else:
             logger.info(f"Running parallel NLI verification for {len(direct_claims)} claims...")
             verified_claims = await asyncio.gather(*[verify_single_claim(c) for c in direct_claims])
+
+        self.last_verifier_meta = dict(getattr(self.entailment_client, "last_meta", {}) or {})
 
         # 3. Calculate grounding ratio
         entailed_count = sum(1 for c in verified_claims if c.get("entailment_status") == "entailment")

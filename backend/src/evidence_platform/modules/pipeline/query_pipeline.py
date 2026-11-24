@@ -89,6 +89,7 @@ class PipelineResult:
     evidence_map: dict[str, Any] = field(default_factory=dict)
     certainty: dict[str, Any] = field(default_factory=dict)
     safety_gate: str | None = None   # phi | out_of_scope | low_relevance | unknown_entity
+    model_trace: dict[str, Any] = field(default_factory=dict)  # which model performed which step
 
 
 class QueryPipeline:
@@ -279,6 +280,11 @@ class QueryPipeline:
         )
         _tick("grounding_s", t0)
         counts["final_claims"] = len(final_claims)
+        result.model_trace = {
+            "generator": {**(synth_res.llm_meta or {}), "task": "Evidence synthesis (structured JSON answer)"},
+            "verifier": {**(getattr(self.abstention_layer, "last_verifier_meta", {}) or {}),
+                         "task": "Claim-by-claim verification against cited passages"},
+        }
         result.final_status, result.final_claims, result.abstention_reason = final_status, final_claims, abstention_reason
 
         # 12. Citation audit

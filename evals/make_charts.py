@@ -148,18 +148,20 @@ def latency_chart():
 
 def case_chart():
     d = load("case_mode_eval.json")
+    v1 = load("case_mode_eval_v1.json")      # extraction measured with gemini-2.5-flash
     if not d:
         return
     rows = d["rows"]
+    ext_rows = (v1 or d)["rows"]
     names = [r["id"].split("_", 2)[2].replace("_", " ") for r in rows]
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10, 4))
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10, 4.6))
     xs = range(len(rows))
-    a1.bar([x - 0.2 for x in xs], [r["llm"]["gold_recall"] for r in rows], 0.38, color=SYS["indence"], label="LLM + span verification")
-    a1.bar([x + 0.2 for x in xs], [r["regex"]["gold_recall"] for r in rows], 0.38, color=BEFORE, label="Regex fallback")
+    a1.bar([x - 0.2 for x in xs], [r["llm"]["gold_recall"] for r in ext_rows], 0.38, color=SYS["indence"], label="LLM (gemini-2.5-flash) + span verification")
+    a1.bar([x + 0.2 for x in xs], [r["regex"]["gold_recall"] for r in ext_rows], 0.38, color=BEFORE, label="Deterministic regex fallback")
     a1.set_xticks(list(xs), names, rotation=35, ha="right", fontsize=8)
     a1.set_ylim(0, 1.05)
     a1.set_title("Fact extraction — recall of gold facts", loc="left")
-    a1.legend(fontsize=8, loc="lower left")
+    a1.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.38), ncol=1)
     a1.grid(axis="y", color=GRID, linewidth=0.8)
     a1.set_axisbelow(True)
     gm = [r["applicability"]["general_mean"] or 0 for r in rows]
@@ -169,7 +171,10 @@ def case_chart():
     a2.set_xticks(list(xs), names, rotation=35, ha="right", fontsize=8)
     a2.set_ylim(0, 1.05)
     a2.set_title("Mean applicability of top-8 studies", loc="left")
-    a2.legend(fontsize=8, loc="lower left")
+    a2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.38), ncol=2)
+    for x, r in zip(xs, rows):
+        if r["applicability"]["general_mean"] is None:
+            a2.text(x - 0.2, 0.02, "n/a", ha="center", fontsize=7.5, color=INK2, rotation=90)
     a2.grid(axis="y", color=GRID, linewidth=0.8)
     a2.set_axisbelow(True)
     fig.tight_layout()

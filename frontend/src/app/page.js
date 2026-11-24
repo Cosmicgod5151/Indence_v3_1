@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import EvidenceMap from "./components/EvidenceMap";
 import CertaintyCard from "./components/CertaintyCard";
 import CaseMode from "./components/CaseMode";
+import ModelTrace from "./components/ModelTrace";
+import ClaimVerification from "./components/ClaimVerification";
 
 // Cookie helper to read CSRF token
 function getCookie(name) {
@@ -686,7 +688,9 @@ export default function Home() {
                 )}
 
                 {/* 2b. Deterministic certainty rating + quantitative evidence map */}
+                <ModelTrace trace={results.model_trace} />
                 <CertaintyCard certainty={results.certainty} />
+                <ClaimVerification claims={results.direct_answer_claims} />
                 <EvidenceMap map={results.evidence_map} />
 
                 {/* 3. Main Synthesis & Claims Layout */}

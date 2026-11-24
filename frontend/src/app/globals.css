@@ -1469,3 +1469,52 @@ h1, h2, h3, h4 {
   .case-grid { grid-template-columns: 1fr; }
   .case-question-row { flex-direction: column; }
 }
+
+/* ===== Model attribution, safety check, claim verification ===== */
+.model-trace { padding: 1rem 1.25rem; }
+.model-trace summary { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; cursor: pointer; list-style: none; }
+.model-trace summary::-webkit-details-marker { display: none; }
+.mt-legend { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.mt-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-top: 0.6rem; }
+.mt-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); padding: 0.4rem 0.5rem; }
+.mt-table td { border-bottom: 1px solid var(--border-subtle); padding: 0.45rem 0.5rem; vertical-align: top; }
+.mt-step { font-weight: 600; white-space: nowrap; }
+.mt-details { color: var(--text-secondary); }
+.mt-chip { display: inline-block; font-family: monospace; font-size: 0.76rem; border-radius: 6px; padding: 0.12rem 0.5rem; border: 1px solid transparent; }
+.mt-chip.llm { background: var(--surface-indigo-tint); color: var(--accent-indigo); border-color: rgba(79, 70, 229, 0.2); }
+.mt-chip.local { background: var(--surface-teal-tint); color: var(--clinical-teal); border-color: rgba(15, 118, 110, 0.2); }
+.mt-chip.rule { background: var(--bg-surface-subtle); color: var(--text-secondary); border-color: var(--border-color); }
+.mt-chip.none { background: var(--surface-rose-tint); color: var(--accent-rose); }
+
+.safety-check .sc-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+.sc-counts { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.sc-count { font-size: 0.78rem; font-weight: 700; border-radius: 999px; padding: 0.15rem 0.6rem; }
+.sc-count.major { background: var(--surface-rose-tint); color: var(--accent-rose); }
+.sc-count.moderate { background: var(--surface-amber-tint); color: var(--accent-amber); }
+.sc-count.review { background: var(--surface-indigo-tint); color: var(--accent-indigo); }
+.sc-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; background: var(--bg-surface-elevated); border-radius: 10px; padding: 0.7rem 0.9rem; }
+.sc-context p { margin: 0.2rem 0 0; font-size: 0.86rem; color: var(--text-primary); }
+.sc-none { color: var(--accent-emerald); font-size: 0.9rem; }
+.sc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.sc-flag { border: 1px solid var(--border-subtle); border-left-width: 4px; border-radius: 10px; padding: 0.65rem 0.85rem; }
+.sc-flag.major { border-left-color: var(--accent-rose); }
+.sc-flag.moderate { border-left-color: var(--accent-amber); }
+.sc-flag.review { border-left-color: var(--accent-indigo); }
+.sc-flag-head { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; font-size: 0.9rem; }
+.sc-x { color: var(--text-muted); }
+.sc-cat { font-size: 0.74rem; background: var(--bg-surface-subtle); color: var(--text-secondary); border-radius: 999px; padding: 0.1rem 0.5rem; }
+.sc-sev { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-left: auto; }
+.sc-sev.major { color: var(--accent-rose); }
+.sc-sev.moderate { color: var(--accent-amber); }
+.sc-sev.review { color: var(--accent-indigo); }
+.sc-msg { margin: 0.35rem 0 0.2rem; font-size: 0.88rem; color: var(--text-primary); }
+.sc-action { margin: 0; font-size: 0.84rem; color: var(--text-secondary); }
+.sc-method { margin: 0.25rem 0 0; font-size: 0.76rem; color: var(--text-muted); font-family: monospace; }
+
+.claim-verification { padding: 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.cv-ids { font-family: monospace; font-size: 0.78rem; color: var(--accent-blue); white-space: nowrap; }
+.cv-conf { min-width: 120px; }
+.cv-bar { position: relative; display: block; height: 18px; background: var(--bg-surface-subtle); border-radius: 999px; overflow: hidden; }
+.cv-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--grad-cyan-blue); border-radius: 999px; }
+.cv-num { position: relative; font-size: 0.74rem; font-weight: 700; color: var(--text-primary); padding-left: 0.5rem; line-height: 18px; mix-blend-mode: normal; }
+@media (max-width: 900px) { .sc-context { grid-template-columns: 1fr; } }

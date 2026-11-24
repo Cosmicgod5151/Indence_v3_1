@@ -511,7 +511,9 @@ class OpenRouterEntailmentClient(EntailmentClient):
         user = "\n\n".join(items)
         try:
             parsed, _meta = await self._llm.complete_json(self.SYSTEM_PROMPT, user, max_tokens=1500 + 40 * len(pairs),
-                                                          reasoning="low")  # thinking models count reasoning against this budget
+                                                          reasoning="low")
+            self.last_meta = {"model": _meta.get("model"), "provider": "chat model (NLI prompt)",
+                              "latency_s": _meta.get("latency_s"), "attempted_models": _meta.get("attempted_models")}  # thinking models count reasoning against this budget
             labels = parsed.get("labels") or []
             if not isinstance(labels, list):
                 raise ValueError("labels is not a list")

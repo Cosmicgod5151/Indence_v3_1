@@ -165,3 +165,11 @@ def test_ovarian_brca_maintenance_case():
     dims = {c["dimension"]: c["status"] for c in row["cells"]}
     assert dims["Disease"] == "match" and dims["Biomarker (BRCA)"] == "match"
     assert dims["Stage"] == "match" and dims["Prior therapy"] == "match"
+
+
+def test_missing_data_respects_receptor_status():
+    her2_er_neg = "metastatic breast cancer, ER negative, PR negative, HER2 positive (IHC 3+), BRCA not tested, ECOG 1"
+    miss = {m["variable"] for m in missing_data("Breast Cancer", [], her2_er_neg)}
+    assert "PIK3CA/ESR1" not in miss
+    hr_pos = "metastatic breast cancer, ER 90%, PR 20%, HER2-low, ECOG 1"
+    assert "PIK3CA/ESR1" in {m["variable"] for m in missing_data("Breast Cancer", [], hr_pos)}

@@ -3,6 +3,9 @@
 import React, { useMemo, useState } from "react";
 import EvidenceMap from "./EvidenceMap";
 import CertaintyCard from "./CertaintyCard";
+import ModelTrace from "./ModelTrace";
+import SafetyCheck from "./SafetyCheck";
+import ClaimVerification from "./ClaimVerification";
 
 // Synthetic, fictional, de-identified sample cases (see evals/cases/synthetic_cases.json).
 const SAMPLES = [
@@ -217,6 +220,7 @@ export default function CaseMode({ apiPost }) {
                   ))}
                 </tbody>
               </table>
+              <ModelTrace trace={extraction.model_trace} title="Extraction — which model did what" />
               {extraction.missing_data.length > 0 && (
                 <div className="missing-box">
                   <span className="filter-label">Missing decision-critical information</span>
@@ -278,6 +282,8 @@ export default function CaseMode({ apiPost }) {
               </div>
             )}
           </section>
+
+          <SafetyCheck safety={cm.safety_check} />
 
           <section className="glass case-panel">
             <div className="matrix-head">
@@ -350,7 +356,9 @@ export default function CaseMode({ apiPost }) {
           </section>
 
           <CertaintyCard certainty={result.certainty} />
+          <ClaimVerification claims={result.direct_answer_claims} />
           <EvidenceMap map={result.evidence_map} />
+          <ModelTrace trace={{ ...(extraction && extraction.model_trace), ...result.model_trace }} />
         </div>
       )}
     </div>

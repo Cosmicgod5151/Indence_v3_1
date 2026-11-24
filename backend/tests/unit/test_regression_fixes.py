@@ -176,3 +176,34 @@ def test_scope_and_entity_gates():
     passages = [_cand("a", "P1", "Trastuzumab deruxtecan improved PFS in HER2-positive breast cancer.")]
     assert unknown_entities("Is zorvatinib effective in HER2-positive breast cancer?", passages) == ["zorvatinib"]
     assert unknown_entities("Is trastuzumab effective in HER2-positive breast cancer?", passages) == []
+
+
+def test_gemini_decision_verifier_maps_labels_and_confidence(monkeypatch):
+    import asyncio
+    import httpx
+    from evidence_platform.adapters.models.gemini_decision import GeminiDecisionEntailmentClient
+
+    class FakeResp:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {"answers": {
+                "claim_0": {"choice": "supported", "confidence": 0.98, "probabilities": {"supported": 0.98, "contradicted": 0.01, "not_established": 0.01}},
+                "claim_1": {"choice": "contradicted", "confidence": 0.97, "probabilities": {"supported": 0.01, "contradicted": 0.97, "not_established": 0.02}},
+            }}
+
+    sent = {}
+
+    async def fake_post(self, url, headers=None, json=None):
+        sent["url"], sent["body"] = url, json
+        return FakeResp()
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+    c = GeminiDecisionEntailmentClient(api_key="test-key")
+    out = asyncio.run(c.check_entailment_batch_detailed([("Median PFS 18.9 months.", "PFS was 18.9 months."),
+                                                          ("Median PFS 18.9 months.", "PFS was 19.8 months.")]))
+    assert [o["label"] for o in out] == ["entailment", "contradiction"]
+    assert out[0]["confidence"] == 0.98 and out[1]["probabilities"]["contradiction"] == 0.97
+    assert sent["url"].endswith("/v1beta/decisions") and sent["body"]["model"] == "gemini-decision-1"
+    assert sent["body"]["input"].count("[PASSAGE") == 1          # shared premise sent once
+    assert c.last_meta["model"] == "gemini-decision-1" and c.last_meta["fallback_used"] is False

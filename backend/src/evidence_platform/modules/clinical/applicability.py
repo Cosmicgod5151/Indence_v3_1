@@ -80,7 +80,9 @@ def _patient_profile(facts: list[dict[str, Any]]) -> dict[str, Any]:
         if not labels and re.search(r"\bher2\b[^.]{0,10}(?:1\+|2\+)", v, re.I):
             labels = ["HER2-low"]
         biomarkers += [(v, b) for b in labels]
-    stage_txt = " ".join(vals("stage") + vals("metastatic_site"))
+    # Negative findings ("No brain metastases") are facts, but not metastatic sites.
+    met_sites = [v for v in vals("metastatic_site") if not re.match(r"\s*(?:no|without|absent|negative)\b", v, re.I)]
+    stage_txt = " ".join(vals("stage") + met_sites)
     stage = None
     if re.search(r"metasta|stage\s*iv[abc]?\b|\bm1\b", stage_txt, re.I):
         stage = "Metastatic / Stage IV"

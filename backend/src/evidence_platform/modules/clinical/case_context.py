@@ -188,7 +188,7 @@ def flag_conflicts(facts: list[CaseFact]) -> list[dict[str, Any]]:
     conflicts = []
     keyed: dict[tuple[str, str], list[int]] = {}
     for i, f in enumerate(facts):
-        if f.field in ("biomarker", "lab", "performance_status", "stage"):
+        if f.field in ("biomarker", "lab", "performance_status", "stage") or (f.field == "medication" and f.name):
             key = (f.field, _norm(f.name or f.field))
             keyed.setdefault(key, []).append(i)
     for (fld, name), idxs in keyed.items():
@@ -220,9 +220,14 @@ def missing_data(disease: str | None, facts: list[CaseFact], text: str) -> list[
         r"egfr[^.;,]{0,25}(?:exon|l858r|deletion|mutat|positive)|alk[^.;,]{0,20}(?:positive|rearranged|fusion detected)"
         r"|ros1[^.;,]{0,15}positive|kras[^.;,]{0,10}g12", hay))
     drivers = {"EGFR", "ALK", "ROS1", "KRAS"}
+    hr_negative = bool(re.search(r"\ber\b[^.;,]{0,12}negative|\bpr\b[^.;,]{0,12}negative|hormone[- ]receptor[- ]negative|triple[- ]negative|\bhr-", hay))
+    hr_positive = bool(re.search(r"\ber\b[^.;,]{0,12}(?:positive|\d{1,3}\s*%)|hormone[- ]receptor[- ]positive|\bhr\+|hr-positive", hay))
     out = []
     for label, terms, why in rules:
         if driver_found and disease == "Non-Small Cell Lung Cancer" and label in drivers:
+            continue
+        # PIK3CA/ESR1 testing only changes management in hormone-receptor-positive disease
+        if label == "PIK3CA/ESR1" and hr_negative and not hr_positive:
             continue
         if not any(t in hay for t in terms):
             out.append({"variable": label, "why_it_matters": why})
@@ -267,6 +272,7 @@ def regex_extract(text: str) -> list[dict[str, Any]]:
 async def extract_case_facts(text: str, llm_client: Any | None) -> dict[str, Any]:
     """Run the full extraction workflow. ``llm_client`` must expose complete_json()."""
     method, error = "llm", None
+    meta: dict[str, Any] = {}
     raw: list[dict[str, Any]] = []
     if llm_client is not None and hasattr(llm_client, "complete_json"):
         try:
@@ -290,6 +296,13 @@ async def extract_case_facts(text: str, llm_client: Any | None) -> dict[str, Any
         "missing_data": missing_data(disease, facts, text),
         "extraction_method": method,
         "extraction_error": error,
+        "model_trace": {"extractor": {
+            "model": meta.get("model") if raw and method != "regex-fallback" else "Indence regex fallback (no LLM)",
+            "task": "Clinical fact extraction with verbatim source quotes",
+            "latency_s": meta.get("latency_s"), "attempted_models": meta.get("attempted_models"),
+            "retries": meta.get("retries"), "fallback_errors": [e[:160] for e in (meta.get("fallback_errors") or [])],
+        }, "span_verifier": {"model": "Indence deterministic span check (no LLM)",
+                             "task": "Every fact must be found verbatim in the case text"}},
         "traceability": {
             "proposed": len(raw), "verified": len(facts), "dropped": len(dropped),
             "rate": round(len(facts) / len(raw), 3) if raw else None,

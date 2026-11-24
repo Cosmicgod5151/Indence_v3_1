@@ -29,6 +29,7 @@ from .modules.pipeline.query_pipeline import QueryPipeline, PipelineOptions, Pip
 from .modules.clinical.phi_guard import scan_phi
 from .modules.clinical.case_context import extract_case_facts, build_case_query, missing_data, detect_disease, CaseFact, fact_label
 from .modules.clinical.applicability import build_applicability_matrix
+from .modules.clinical.safety_check import run_safety_check
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -229,7 +230,7 @@ def _model_versions(result: PipelineResult) -> dict[str, Any]:
         "embedding": "BAAI/bge-m3" if settings.EMBEDDING_PROVIDER.lower() in ("bge-m3", "bge", "real") else "mock",
         "reranker": "BAAI/bge-reranker-v2-m3" if settings.RERANKER_PROVIDER.lower() in ("bge-reranker", "bge", "real") else "mock",
         "llm": meta.get("model") or (settings.LLM_MODEL_NAME if settings.LLM_PROVIDER.lower() in ("openrouter", "real") else "mock"),
-        "entailment": (settings.ENTAILMENT_MODEL_NAME or settings.LLM_MODEL_NAME) if settings.ENTAILMENT_PROVIDER.lower() in ("openrouter", "real") else "mock",
+        "entailment": ((result.model_trace or {}).get("verifier", {}) or {}).get("model") or settings.ENTAILMENT_PROVIDER,
         "llm_usage": meta.get("usage"),
         "llm_error": bool(meta.get("error")),
     }
@@ -347,6 +348,13 @@ def persist_and_build_response(db: Session, user: User, result: PipelineResult, 
             "failed_nums_count": sum(1 for c in final_claims if not c.get("numeric_validation_passed", True)),
             "llm_error": synth_res.llm_error if synth_res else None,
         "safety_gate": result.safety_gate,
+        "model_trace": {
+            "embedding": {"model": models["embedding"], "task": "Dense + learned-sparse query encoding", "runs_on": "local GPU"},
+            "reranker": {"model": models["reranker"], "task": "Cross-encoder relevance scoring", "runs_on": "local GPU"},
+            **(result.model_trace or {}),
+            "deterministic": {"model": "Indence rules (no LLM)", "task": "Safety gates, population filter, effect-size "
+                              "extraction, heterogeneity, certainty rating, applicability"},
+        },
         },
     ))
 
@@ -408,6 +416,13 @@ def persist_and_build_response(db: Session, user: User, result: PipelineResult, 
         "abstention_reason": abstention_reason,
         "llm_error": synth_res.llm_error if synth_res else None,
         "safety_gate": result.safety_gate,
+        "model_trace": {
+            "embedding": {"model": models["embedding"], "task": "Dense + learned-sparse query encoding", "runs_on": "local GPU"},
+            "reranker": {"model": models["reranker"], "task": "Cross-encoder relevance scoring", "runs_on": "local GPU"},
+            **(result.model_trace or {}),
+            "deterministic": {"model": "Indence rules (no LLM)", "task": "Safety gates, population filter, effect-size "
+                              "extraction, heterogeneity, certainty rating, applicability"},
+        },
         "model_versions": models,
         "_debug": {
             "timings": timings,
@@ -481,7 +496,12 @@ async def case_search(payload: dict[str, Any], user: User = Depends(get_current_
     general_ids = {r["pmcid"] for r in general_matrix["rows"]}
     fact_text = " ".join(fact_label(f) for f in facts)
     disease = detect_disease([CaseFact(field=f.get("field", ""), value=str(f.get("value"))) for f in facts], fact_text)
+    syn = response.get("synthesis") or {}
+    answer_texts = [(syn.get(k) or {}).get("text", "") for k in ("recommendation", "alternatives", "bottom_line", "clinical_reasoning")]
+    safety = await run_safety_check(facts, question, answer_texts)
+    response["model_trace"] = {**(response.get("model_trace") or {}), **safety.pop("model_trace")}
     response["case_mode"] = {
+        "safety_check": safety,
         "case_query": case_query,
         "case_intent": case_intent.to_dict(),
         "applicability": case_matrix,
