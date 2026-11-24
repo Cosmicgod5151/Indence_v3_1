@@ -261,7 +261,11 @@ class OpenRouterLLMClient(LLMClient):
                     response = await asyncio.wait_for(client.post(url, headers=headers, json=payload), timeout=self.timeout_s)
         if response.status_code != 200:
             if response.status_code in (402, 429):
-                _cooldown_until[f"{provider}:{model}"] = _time.monotonic() + _COOLDOWN_S
+                # Honour the provider's retry hint: a daily free-tier quota can be
+                # exhausted for hours, so do not keep retrying that model.
+                m = re.search(r'"retryDelay":\s*"(\d+)s"', response.text)
+                wait = min(float(m.group(1)), 6 * 3600) if m else _COOLDOWN_S
+                _cooldown_until[f"{provider}:{model}"] = _time.monotonic() + max(_COOLDOWN_S, wait)
             raise LLMUnavailableError(f"{provider}:{model} HTTP {response.status_code}: {response.text[:200]}")
         res_data = response.json()
         content = (res_data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
@@ -298,16 +302,26 @@ class OpenRouterLLMClient(LLMClient):
                 errors.append(f"{tag} skipped (cooling down after rate limit)")
                 continue
             attempted.append(tag)
-            try:
-                parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens, temperature,
-                                                    compact_suffix, reasoning)
-                meta["attempted_models"] = attempted
-                meta["fallback_errors"] = errors
-                return parsed, meta
-            except LLMUnavailableError as e:
-                errors.append(str(e))
-            except Exception as e:
-                errors.append(f"{tag} {type(e).__name__}: {e}")
+            # Transient overload (HTTP 500/502/503/504, timeouts): retry the SAME
+            # model with backoff before falling through to the next one.
+            for attempt, backoff in enumerate((0, 5, 15, 30)):
+                if backoff:
+                    await asyncio.sleep(backoff)
+                try:
+                    parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens,
+                                                        temperature, compact_suffix, reasoning)
+                    meta["attempted_models"] = attempted
+                    meta["fallback_errors"] = errors
+                    meta["retries"] = attempt
+                    return parsed, meta
+                except LLMUnavailableError as e:
+                    err = str(e)
+                except Exception as e:
+                    err = f"{tag} {type(e).__name__}: {e}"
+                transient = any(code in err for code in ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "TimeoutError", "ReadError", "ConnectError"))
+                if not transient:
+                    break
+            errors.append(err)
             logger.warning("LLM attempt failed (%s); trying next model in chain.", errors[-1][:160])
         raise LLMUnavailableError(" | ".join(errors) or "No LLM provider configured")
 

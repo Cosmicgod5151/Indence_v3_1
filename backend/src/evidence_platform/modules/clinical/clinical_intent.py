@@ -107,6 +107,8 @@ class ClinicalIntentExtractor:
         (r"\bbraf\s*v600e?\b|\bbraf\s*mutant\b", "BRAF-mutant", ["BRAF wild-type"]),
         (r"\balk[- ]positive\b|\balk\s*rearrangement\b|\balk\s*\+(?!\w)|\balk[- ]rearranged\b", "ALK-positive", ["ALK wild-type"]),
         (r"\bpd[- ]l1\s*(?:positive\b|high\b|(?:\u2265|>=)\s*\d{1,3}\s*%)", "PD-L1 positive", ["PD-L1 negative"]),
+        (r"\bg?brca[12]?[- ]?(?:mutat\w*|positive|pathogenic|carrier)|\bbrca[12]?m\b|\b(?:germline|somatic)\s+brca[12]?\b|\bbrca[12]?\s+(?:pathogenic|mutation)", "BRCA-mutant", ["BRCA wild-type"]),
+        (r"\bhrd[- ]positive\b|\bhomologous recombination deficien", "HRD-positive", ["HR-proficient"]),
         (r"\bmsi[- ]h\b|\bdmmr\b", "MSI-H/dMMR", ["MSS/pMMR"]),
         (r"\bmss\b|\bpmmr\b", "MSS/pMMR", ["MSI-H/dMMR"]),
     ]

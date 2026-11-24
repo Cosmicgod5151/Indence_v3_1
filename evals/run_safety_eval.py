@@ -30,7 +30,7 @@ import httpx
 
 from _common import ROOT, make_session, make_pipeline, clients, save_json, now_iso, summarize_latency
 
-GEN_MODEL = "gemini:gemini-2.5-flash,gemini:gemini-3.5-flash"
+GEN_MODEL = "gemini:gemini-3.1-flash-lite"  # ONE fixed generator for all three systems (fairness)
 NUM_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?![\w])")
 ABSTAIN_CATS = {"out_of_scope", "fictional_drug", "phi"}
 
@@ -147,6 +147,9 @@ async def run_indence(pipe, q: str) -> dict:
     from evidence_platform.modules.pipeline.query_pipeline import PipelineOptions
     t0 = time.perf_counter()
     res = await pipe.run(q, {}, PipelineOptions(retrieval_mode="full"))
+    if res.synth_res and res.synth_res.llm_error:
+        # Provider outage is an infrastructure error, not an Indence abstention.
+        return {"error": res.synth_res.llm_error[:200], "latency_s": round(time.perf_counter() - t0, 2)}
     abst = res.final_status == "insufficient_evidence"
     sent = res.safety_gate not in ("phi", "out_of_scope", "unknown_entity", "low_relevance")
     out = {"abstained": abst, "gate": res.safety_gate, "abstention_reason": res.abstention_reason,
@@ -204,7 +207,7 @@ def summarise(rows: list[dict], system: str) -> dict:
 
 async def main():
     items = json.loads((ROOT / "evals" / "gold_sets" / "safety_v1.json").read_text(encoding="utf-8"))["items"]
-    pipe = make_pipeline(make_session())
+    pipe = make_pipeline(make_session(), GEN_MODEL)   # Indence uses the same generator
     llm = clients(GEN_MODEL)[2]
     from evidence_platform.modules.pipeline.query_pipeline import PipelineOptions
     await pipe.run("warm up", {}, PipelineOptions(retrieval_mode="hybrid_rerank"))
@@ -212,9 +215,9 @@ async def main():
     for n, it in enumerate(items, 1):
         row = {"id": it["id"], "category": it["category"], "question": it["question"]}
         row["llm_only"] = await run_llm_only(llm, it["question"])
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
         row["naive_rag"] = await run_naive_rag(pipe, llm, it["question"])
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
         row["indence"] = await run_indence(pipe, it["question"])
         rows.append(row)
         print(f"{n:2d}/{len(items)} {it['id']:8s} LLM-only abst={row['llm_only'].get('abstained')} "

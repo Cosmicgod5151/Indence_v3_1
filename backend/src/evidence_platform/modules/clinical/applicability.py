@@ -23,7 +23,7 @@ _BIOMARKER_FAMILY = {
     "HER2-positive": "HER2", "HER2-low": "HER2", "HER2-ultralow": "HER2", "HER2-negative": "HER2", "Triple-negative": "HER2",
     "HR-positive": "HR", "EGFR-mutant": "EGFR", "EGFR wild-type": "EGFR", "KRAS/RAS wild-type": "RAS",
     "KRAS-mutant": "RAS", "BRAF-mutant": "BRAF", "ALK-positive": "ALK", "PD-L1 positive": "PD-L1",
-    "MSI-H/dMMR": "MSI", "MSS/pMMR": "MSI",
+    "MSI-H/dMMR": "MSI", "MSS/pMMR": "MSI", "BRCA-mutant": "BRCA", "HRD-positive": "BRCA",
 }
 
 
@@ -82,9 +82,11 @@ def _patient_profile(facts: list[dict[str, Any]]) -> dict[str, Any]:
         biomarkers += [(v, b) for b in labels]
     stage_txt = " ".join(vals("stage") + vals("metastatic_site"))
     stage = None
-    if re.search(r"metasta|stage\s*iv|\bm1\b|advanced", stage_txt, re.I):
+    if re.search(r"metasta|stage\s*iv[abc]?\b|\bm1\b", stage_txt, re.I):
         stage = "Metastatic / Stage IV"
-    elif re.search(r"stage\s*(?:i|ii|iii)\b|locali[sz]ed|early", stage_txt, re.I):
+    elif re.search(r"stage\s*iii[abc]?\d?\b|locally advanced|\badvanced\b", stage_txt, re.I):
+        stage = "Advanced (stage III-IV)"
+    elif re.search(r"stage\s*(?:i|ii)[abc]?\d?\b|locali[sz]ed|early", stage_txt, re.I):
         stage = "Early / Localized"
     ecog = None
     for v in vals("performance_status"):
@@ -123,7 +125,8 @@ def assess_study(study_text: str, title: str, profile: dict[str, Any]) -> dict[s
         family = _BIOMARKER_FAMILY.get(label, label)
         same_family = {b for b in study_bios if _BIOMARKER_FAMILY.get(b, b) == family}
         fam_rx = {"HER2": r"her2|erbb2", "HR": r"hormone[- ]receptor|\bhr\b|\ber\b|estrogen", "EGFR": r"egfr",
-                  "RAS": r"\b[kn]?ras\b", "BRAF": r"braf", "ALK": r"\balk\b", "PD-L1": r"pd-?l1", "MSI": r"msi|mmr"}.get(family, re.escape(family))
+                  "RAS": r"\b[kn]?ras\b", "BRAF": r"braf", "ALK": r"\balk\b", "PD-L1": r"pd-?l1", "MSI": r"msi|mmr",
+                  "BRCA": r"brca|homologous recombination|hrd"}.get(family, re.escape(family))
         implied = [(lab, drug) for lab, drug in _implied_biomarkers(text) if _BIOMARKER_FAMILY.get(lab, lab) == family]
         if family == "EGFR" and label == "EGFR-mutant":
             pt_ex20 = bool(re.search(r"exon\s*20|ex20ins|insertion", raw_value, re.I))
@@ -157,12 +160,17 @@ def assess_study(study_text: str, title: str, profile: dict[str, Any]) -> dict[s
 
     # Stage / extent ("adjuvant"/"resected" trials enrol early-stage patients)
     early_setting = re.search(r"(?<!neo)adjuvant|resected|resectable|post-?operative|stage\s*i{1,3}[ab]?\s*(?:-|–|to)\s*iii", text, re.I)
-    if profile["stage"] and early_setting and profile["stage"].startswith("Metastatic"):
+    if profile["stage"] and early_setting and profile["stage"].startswith(("Metastatic", "Advanced")) and not re.search(r"maintenance", text, re.I):
         cells.append(_cell("Stage", profile["stage_text"] or profile["stage"], "differs",
                            _sentence_with(text, r"adjuvant|resect|post-?operative|stage"),
                            "Study is in the adjuvant / resected (early-stage) setting"))
     elif profile["stage"]:
-        if meta.stage and (profile["stage"].split()[0].lower() in meta.stage.lower()):
+        advanced_family = ("metastatic", "advanced")
+        same_band = meta.stage and (
+            profile["stage"].split()[0].lower() in meta.stage.lower()
+            or (profile["stage"].split()[0].lower() in advanced_family and meta.stage.split()[0].lower() in advanced_family)
+        )
+        if same_band:
             cells.append(_cell("Stage", profile["stage_text"] or profile["stage"], "match",
                                _sentence_with(text, r"metasta|stage\s*iv|advanced|early|locali[sz]ed|stage\s*i")))
         elif meta.stage:
@@ -179,7 +187,11 @@ def assess_study(study_text: str, title: str, profile: dict[str, Any]) -> dict[s
         for a in profile["prior_agents"]:
             agent_naive = agent_naive or _sentence_with(text, rf"{re.escape(a.split()[0])}[- ]na[iï]ve|no prior {re.escape(a.split()[0])}")
         label = "; ".join(profile["priors"][:2])
-        if agent_naive:
+        maint = _sentence_with(text, r"maintenance")
+        if maint and not agent_naive:
+            # Maintenance trials enrol patients who responded to prior induction therapy.
+            cells.append(_cell("Prior therapy", label, "match", maint, "Maintenance setting after prior therapy"))
+        elif agent_naive:
             cells.append(_cell("Prior therapy", label, "differs", agent_naive, "Study required patients naive to a drug this patient already received"))
         elif pre and not naive:
             cells.append(_cell("Prior therapy", label, "match", pre))

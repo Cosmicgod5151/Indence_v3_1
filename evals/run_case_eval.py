@@ -42,7 +42,8 @@ async def main():
     from evidence_platform.modules.clinical.applicability import build_applicability_matrix
     from evidence_platform.modules.pipeline.query_pipeline import PipelineOptions
     cases = json.loads((ROOT / "evals" / "cases" / "synthetic_cases.json").read_text(encoding="utf-8"))["cases"]
-    llm = clients()[2]
+    import os
+    llm = clients(os.environ.get("EXTRACT_MODEL") or None)[2]
     pipe = make_pipeline(make_session())
     rows = []
     for case in cases:
@@ -61,6 +62,7 @@ async def main():
             }
             if method == "llm":
                 facts = [f for f in out["facts"] if not f.get("conflict_with")]
+                row["llm_facts"] = out["facts"]
             await asyncio.sleep(2 if method == "llm" else 0)
         if case.get("expected_conflict"):
             row["conflict_detected"] = any(case["expected_conflict"].lower() in (c or "").lower() for c in row["llm"]["conflicts"])
@@ -107,7 +109,9 @@ async def main():
             "cases_improved": sum(1 for r in rows if (r["applicability"]["case_mean"] or 0) > (r["applicability"]["general_mean"] or 0)),
         },
     }
-    print(save_json("case_mode_eval.json", {"generated_at": now_iso(), "summary": summary, "rows": rows}))
+    import os
+    print(save_json("case_mode_eval.json", {"generated_at": now_iso(), "extraction_model": os.environ.get("EXTRACT_MODEL") or "app default chain",
+                                            "summary": summary, "rows": rows}))
     print(json.dumps(summary, indent=1))
 
 

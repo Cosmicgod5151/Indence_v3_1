@@ -150,3 +150,18 @@ def test_egfr_exon20_and_adjuvant_studies_are_different_populations():
     assert {c["dimension"]: c["status"] for c in adj["cells"]}["Stage"] == "differs"
     miss = {m["variable"] for m in missing_data("Non-Small Cell Lung Cancer", [], "EGFR exon 19 deletion, stage IV, ECOG 1, PD-L1 10%")}
     assert "KRAS" not in miss and "ALK" not in miss
+
+
+def test_ovarian_brca_maintenance_case():
+    facts = [{"field": "cancer_type", "value": "high-grade serous ovarian carcinoma"},
+             {"field": "stage", "value": "FIGO stage IIIC"},
+             {"field": "biomarker", "name": "BRCA1", "value": "Germline BRCA1 pathogenic mutation"},
+             {"field": "prior_therapy", "value": "carboplatin and paclitaxel with complete response"}]
+    prof = _patient_profile(facts)
+    assert prof["disease"] == "Ovarian Cancer" and prof["stage"].startswith("Advanced")
+    assert any(b == "BRCA-mutant" for _, b in prof["biomarkers"])
+    row = assess_study("Olaparib maintenance in patients with newly diagnosed advanced ovarian cancer and a BRCA mutation "
+                       "who had a response to platinum-based chemotherapy.", "", prof)
+    dims = {c["dimension"]: c["status"] for c in row["cells"]}
+    assert dims["Disease"] == "match" and dims["Biomarker (BRCA)"] == "match"
+    assert dims["Stage"] == "match" and dims["Prior therapy"] == "match"

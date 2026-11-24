@@ -1,0 +1,401 @@
+{
+  "generated_at": "2026-11-25T02:59:41",
+  "summary": {
+    "n_cases": 8,
+    "n_gold_facts": 85,
+    "llm_extraction": {
+      "gold_recall_micro": 0.988,
+      "traceability_micro": 0.958,
+      "facts_dropped": 3,
+      "facts_verified": 114
+    },
+    "regex_fallback": {
+      "gold_recall_micro": 0.518,
+      "traceability_micro": 1.0,
+      "facts_dropped": 0,
+      "facts_verified": 55
+    },
+    "conflict_detection": [
+      true
+    ],
+    "applicability": {
+      "general_mean_of_means": 0.662,
+      "case_aware_mean_of_means": 0.76,
+      "general_different_population_total": 12,
+      "case_different_population_total": 8,
+      "cases_improved": 5
+    }
+  },
+  "rows": [
+    {
+      "id": "case_01_nsclc_egfr",
+      "n_gold": 13,
+      "llm": {
+        "method": "llm:gemini:gemini-3.5-flash",
+        "proposed": 17,
+        "verified": 17,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 13,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 11,
+        "verified": 11,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 10,
+        "gold_recall": 0.769,
+        "missed": [
+          "metastatic_site:liver",
+          "metastatic_site:brain",
+          "comorbidity:hypothyroidism"
+        ],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "applicability": {
+        "general_mean": 0.75,
+        "case_mean": 0.938,
+        "general_different_population": 1,
+        "case_different_population": 1,
+        "shared_studies": 0,
+        "case_query": "What first-line systemic treatment has the strongest survival evidence for this patient \u2014 patient context: lung adenocarcinoma, adenocarcinoma, stage IVB, EGFR exon 19 deletion; PD-L1 (22C3) TPS 10%, treatment-naive (first-line)?"
+      }
+    },
+    {
+      "id": "case_02_nsclc_pdl1_conflict",
+      "n_gold": 12,
+      "llm": {
+        "method": "llm:gemini:gemini-3.5-flash",
+        "proposed": 18,
+        "verified": 18,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 12,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [
+          "pd-l1"
+        ],
+        "missing_data": []
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 7,
+        "verified": 7,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 6,
+        "gold_recall": 0.5,
+        "missed": [
+          "histology:squamous",
+          "biomarker:80",
+          "biomarker:45",
+          "lab:72",
+          "comorbidity:diabetes",
+          "medication:metformin"
+        ],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "conflict_detected": true,
+      "applicability": {
+        "general_mean": 0.876,
+        "case_mean": 1.0,
+        "general_different_population": 3,
+        "case_different_population": 0,
+        "shared_studies": 0,
+        "case_query": "Is first-line pembrolizumab monotherapy supported by evidence for this patient \u2014 patient context: non-small cell lung cancer, squamous histology, stage IV, KRAS G12C mutation, treatment-naive (first-line)?"
+      }
+    },
+    {
+      "id": "case_03_breast_her2_pos",
+      "n_gold": 12,
+      "llm": {
+        "method": "llm:gemini:gemini-3.5-flash",
+        "proposed": 14,
+        "verified": 14,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 12,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA",
+          "PIK3CA/ESR1"
+        ]
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 6,
+        "verified": 6,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 5,
+        "gold_recall": 0.417,
+        "missed": [
+          "biomarker:er+negative",
+          "biomarker:pr+negative",
+          "biomarker:her2+3+",
+          "metastatic_site:liver",
+          "prior_therapy:trastuzumab+pertuzumab",
+          "lab:58",
+          "lab:48"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA",
+          "PIK3CA/ESR1"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.834,
+        "case_mean": 0.844,
+        "general_different_population": 2,
+        "case_different_population": 0,
+        "shared_studies": 0,
+        "case_query": "What is the best-supported second-line HER2-targeted treatment after progression \u2014 patient context: metastatic breast cancer, Invasive ductal carcinoma, metastatic, HER2 positive (IHC 3+), previously treated with First-line treatment with trastuzumab, pertuzumab and docetaxel for 14 months; now progressive disease in the liver?"
+      }
+    },
+    {
+      "id": "case_04_breast_hr_pos_post_cdk",
+      "n_gold": 12,
+      "llm": {
+        "method": "llm:nvidia/nemotron-3-ultra-550b-a55b:free",
+        "proposed": 15,
+        "verified": 14,
+        "dropped": 1,
+        "traceability": 0.933,
+        "gold_hit": 12,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA"
+        ]
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 5,
+        "verified": 5,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.333,
+        "missed": [
+          "biomarker:er+90",
+          "biomarker:pr+20",
+          "biomarker:her2+1+",
+          "biomarker:esr1",
+          "metastatic_site:bone",
+          "prior_therapy:letrozole+palbociclib",
+          "comorbidity:osteoporosis",
+          "medication:denosumab"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA"
+        ]
+      },
+      "applicability": {
+        "general_mean": null,
+        "case_mean": 0.886,
+        "general_different_population": 0,
+        "case_different_population": 3,
+        "shared_studies": 0,
+        "case_query": "What are the evidence-based options after progression on a CDK4/6 inhibitor \u2014 patient context: Hormone receptor-positive breast cancer, metastatic (bone-only), ER 90%; PR 20%; IHC 1+ (HER2-low); ESR1 mutation detected; PIK3CA not tested, previously treated with letrozole plus palbociclib for 22 months, progressed?"
+      }
+    },
+    {
+      "id": "case_05_crc_left_ras_wt",
+      "n_gold": 9,
+      "llm": {
+        "method": "llm:nvidia/nemotron-3-ultra-550b-a55b:free",
+        "proposed": 15,
+        "verified": 12,
+        "dropped": 2,
+        "traceability": 0.8,
+        "gold_hit": 9,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 7,
+        "verified": 7,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 6,
+        "gold_recall": 0.667,
+        "missed": [
+          "metastatic_site:liver",
+          "biomarker:braf",
+          "lab:260"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.714,
+        "case_mean": 0.643,
+        "general_different_population": 3,
+        "case_different_population": 3,
+        "shared_studies": 1,
+        "case_query": "Should an anti-EGFR antibody be added to first-line chemotherapy \u2014 patient context: adenocarcinoma of the sigmoid colon, adenocarcinoma, MSI stable (MSS); pMMR, treatment-naive (first-line)?"
+      }
+    },
+    {
+      "id": "case_06_crc_msi_high",
+      "n_gold": 9,
+      "llm": {
+        "method": "llm:nvidia/nemotron-3-ultra-550b-a55b:free",
+        "proposed": 16,
+        "verified": 15,
+        "dropped": 0,
+        "traceability": 0.938,
+        "gold_hit": 9,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 8,
+        "verified": 8,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.444,
+        "missed": [
+          "cancer_type:adenocarcinoma",
+          "metastatic_site:peritoneum",
+          "metastatic_site:liver",
+          "biomarker:braf+v600e",
+          "lab:10.4"
+        ],
+        "conflicts": [
+          "msi/mmr"
+        ],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.524,
+        "case_mean": 0.875,
+        "general_different_population": 2,
+        "case_different_population": 1,
+        "shared_studies": 0,
+        "case_query": "Is first-line immunotherapy better than chemotherapy for this patient \u2014 patient context: right-sided (ascending colon) adenocarcinoma, adenocarcinoma, metastatic, MLH1 loss; deficient (dMMR); MSI high; BRAF V600E mutation present, treatment-naive (first-line)?"
+      }
+    },
+    {
+      "id": "case_07_ovarian_brca",
+      "n_gold": 8,
+      "llm": {
+        "method": "llm:nvidia/nemotron-3-ultra-550b-a55b:free",
+        "proposed": 10,
+        "verified": 10,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 8,
+        "gold_recall": 1.0,
+        "missed": [],
+        "conflicts": [],
+        "missing_data": [
+          "Platinum sensitivity"
+        ]
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 5,
+        "verified": 5,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.5,
+        "missed": [
+          "cancer_type:ovarian",
+          "histology:serous",
+          "prior_therapy:carboplatin+paclitaxel",
+          "lab:12"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "Platinum sensitivity"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.0,
+        "case_mean": 0.0,
+        "general_different_population": 1,
+        "case_different_population": 0,
+        "shared_studies": 4,
+        "case_query": "Does PARP inhibitor maintenance improve survival for this patient \u2014 patient context: high-grade serous ovarian carcinoma, high-grade serous, FIGO stage IIIC, BRCA1 germline pathogenic mutation, previously treated with interval debulking surgery with no residual disease; carboplatin and paclitaxel for six cycles with complete response?"
+      }
+    },
+    {
+      "id": "case_08_prostate_mcspc",
+      "n_gold": 10,
+      "llm": {
+        "method": "llm:nvidia/nemotron-3-ultra-550b-a55b:free",
+        "proposed": 14,
+        "verified": 14,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 9,
+        "gold_recall": 0.9,
+        "missed": [
+          "lab:psa+85"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HRR/BRCA"
+        ]
+      },
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 6,
+        "verified": 6,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 5,
+        "gold_recall": 0.5,
+        "missed": [
+          "metastatic_site:bone",
+          "lab:psa+85",
+          "prior_therapy:degarelix",
+          "comorbidity:hypertension",
+          "medication:amlodipine"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HRR/BRCA"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.938,
+        "case_mean": 0.896,
+        "general_different_population": 0,
+        "case_different_population": 0,
+        "shared_studies": 2,
+        "case_query": "Does adding an androgen receptor pathway inhibitor to ADT improve overall survival \u2014 patient context: prostate adenocarcinoma, Gleason score 4+5=9, metastatic castration-sensitive, PSA 85 ng/mL, previously treated with androgen deprivation therapy (degarelix) 3 weeks ago?"
+      }
+    }
+  ]
+}

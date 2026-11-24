@@ -67,6 +67,14 @@ class PopulationMatchEvaluator:
             disease = "Prostate Cancer"
         elif "diabetes" in text_lower or "metformin" in text_lower:
             disease = "Diabetes"
+        if disease is None:
+            # Fall back to the full disease vocabulary used for queries
+            # (ovarian, melanoma, pancreatic, gastric, RCC, urothelial, ...).
+            from .clinical_intent import ClinicalIntentExtractor
+            for pattern, label in ClinicalIntentExtractor.DISEASE_PATTERNS:
+                if re.search(pattern, text_lower):
+                    disease = label
+                    break
 
         # Context-aware Biomarker Extraction
         biomarker = None
@@ -116,8 +124,8 @@ class PopulationMatchEvaluator:
 
         # Stage
         stage = None
-        if "metastatic" in text_lower or "stage iv" in text_lower or "advanced" in text_lower:
-            stage = "Metastatic / Stage IV"
+        if "metastatic" in text_lower or "stage iv" in text_lower or "advanced" in text_lower or re.search(r"\bstage\s*iii[abc]?\b", text_lower):
+            stage = "Metastatic / Stage IV" if ("metastatic" in text_lower or "stage iv" in text_lower) else "Advanced (stage III-IV)"
         elif "stage ib2" in text_lower or "figo stage ib2" in text_lower:
             stage = "FIGO Stage IB2"
         elif "localized" in text_lower or "early" in text_lower or "stage i" in text_lower:
