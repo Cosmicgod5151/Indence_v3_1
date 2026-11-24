@@ -109,6 +109,9 @@ def assess_certainty(candidates: list[Any], evidence_map: dict[str, Any] | None,
 
     # 4. Imprecision: confidence interval of the main effect + total sample size.
     groups = [g for g in (em.get("groups") or []) if g.get("context", "treatment_comparison") == "treatment_comparison"]
+    # Rate imprecision on effects reported by the passages actually given to the generator.
+    in_bundle = [g for g in groups if any(e.get("evidence_id") for e in g.get("estimates", []))]
+    groups = in_bundle or groups
     sizes = [n for n in (_sample_size(getattr(c, "text", "")) for c in candidates) if n]
     total_n = sum(sizes)
     if groups:

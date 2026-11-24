@@ -27,7 +27,7 @@ from .adapters.models.factory import (
 from .adapters.qdrant.qdrant_client import QdrantIndexClient
 from .modules.pipeline.query_pipeline import QueryPipeline, PipelineOptions, PipelineResult, evidence_sources
 from .modules.clinical.phi_guard import scan_phi
-from .modules.clinical.case_context import extract_case_facts, build_case_query, missing_data, detect_disease, CaseFact
+from .modules.clinical.case_context import extract_case_facts, build_case_query, missing_data, detect_disease, CaseFact, fact_label
 from .modules.clinical.applicability import build_applicability_matrix
 
 # Setup logging
@@ -477,7 +477,7 @@ async def case_search(payload: dict[str, Any], user: User = Depends(get_current_
     general_matrix = build_applicability_matrix(general_pool, facts, {}, limit=8)
     case_ids = {r["pmcid"] for r in case_matrix["rows"]}
     general_ids = {r["pmcid"] for r in general_matrix["rows"]}
-    fact_text = " ".join(f"{f.get('name') or ''} {f.get('value')}" for f in facts)
+    fact_text = " ".join(fact_label(f) for f in facts)
     disease = detect_disease([CaseFact(field=f.get("field", ""), value=str(f.get("value"))) for f in facts], fact_text)
     response["case_mode"] = {
         "case_query": case_query,

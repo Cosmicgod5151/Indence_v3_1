@@ -223,7 +223,8 @@ class OpenRouterLLMClient(LLMClient):
         return obj
 
     async def _call_one(self, provider: str, model: str, system_prompt: str, user_content: str,
-                        max_tokens: int, temperature: float, compact_suffix: str = "") -> tuple[dict[str, Any], dict[str, Any]]:
+                        max_tokens: int, temperature: float, compact_suffix: str = "",
+                        reasoning: str | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
         import time as _time
         url = PROVIDERS[provider][0]
         headers = self._headers_for(self._key_for(provider))
@@ -245,6 +246,10 @@ class OpenRouterLLMClient(LLMClient):
         # models (e.g. Gemini) keep their default reasoning for answer quality.
         if budget_model:
             payload["reasoning"] = {"effort": "low"}
+        elif reasoning and provider == "gemini":
+            payload["reasoning_effort"] = reasoning
+        elif reasoning and provider == "openrouter":
+            payload["reasoning"] = {"effort": reasoning}
         t0 = _time.perf_counter()
         # httpx timeouts are per network operation; wait_for enforces a hard
         # overall deadline (providers can keep a slow request alive for minutes).
@@ -272,9 +277,12 @@ class OpenRouterLLMClient(LLMClient):
 
     async def complete_json(
         self, system_prompt: str, user_content: str, max_tokens: int = 1500, temperature: float = 0.0,
-        compact_suffix: str = "",
+        compact_suffix: str = "", reasoning: str | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """JSON completion over the fallback chain.
+
+        ``reasoning`` ("low"/"medium"/"high") caps hidden thinking for simple tasks
+        such as NLI labelling; None keeps each model's default (used for synthesis).
 
         Returns (parsed_json, meta). Raises LLMUnavailableError when every model
         in the chain fails, so callers degrade explicitly — never a silent mock answer.
@@ -291,7 +299,8 @@ class OpenRouterLLMClient(LLMClient):
                 continue
             attempted.append(tag)
             try:
-                parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens, temperature, compact_suffix)
+                parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens, temperature,
+                                                    compact_suffix, reasoning)
                 meta["attempted_models"] = attempted
                 meta["fallback_errors"] = errors
                 return parsed, meta
@@ -487,7 +496,8 @@ class OpenRouterEntailmentClient(EntailmentClient):
             items.append(f"[{i}] PREMISE: {premise[:3000]}\n[{i}] CLAIM: {hypothesis}")
         user = "\n\n".join(items)
         try:
-            parsed, _meta = await self._llm.complete_json(self.SYSTEM_PROMPT, user, max_tokens=1500 + 40 * len(pairs))  # thinking models count reasoning against this budget
+            parsed, _meta = await self._llm.complete_json(self.SYSTEM_PROMPT, user, max_tokens=1500 + 40 * len(pairs),
+                                                          reasoning="low")  # thinking models count reasoning against this budget
             labels = parsed.get("labels") or []
             if not isinstance(labels, list):
                 raise ValueError("labels is not a list")

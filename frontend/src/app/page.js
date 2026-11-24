@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import EvidenceMap from "./components/EvidenceMap";
+import CertaintyCard from "./components/CertaintyCard";
+import CaseMode from "./components/CaseMode";
 
 // Cookie helper to read CSRF token
 function getCookie(name) {
@@ -218,6 +221,33 @@ export default function Home() {
     }
   };
 
+  const apiPost = async (path, body) => {
+    let token = csrfToken || getCookie("csrf_token");
+    if (!token) {
+      const r = await fetch(`${apiBase}/csrf-token`, { credentials: "include" });
+      const d = await r.json();
+      token = d.csrf_token;
+      setCsrfToken(token);
+    }
+    const res = await fetch(`${apiBase}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": token || "" },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
+    if (res.status === 401) {
+      setUser(null);
+      setLoginError("Your session has expired. Please sign in again.");
+      throw new Error("Session expired");
+    }
+    if (!res.ok) {
+      let msg = `Request failed (${res.status})`;
+      try { const e = await res.json(); msg = e.detail || msg; } catch (e) {}
+      throw new Error(msg);
+    }
+    return res.json();
+  };
+
   const fetchTrace = async (traceId, base = apiBase) => {
     setTraceLoading(true);
     try {
@@ -349,6 +379,12 @@ export default function Home() {
           >
             Clinical Search
           </button>
+          <button
+            className={`tab-btn ${activeTab === "case" ? "active" : ""}`}
+            onClick={() => setActiveTab("case")}
+          >
+            Patient Case
+          </button>
           <button 
             className={`tab-btn ${activeTab === "audit" ? "active" : ""}`}
             onClick={() => setActiveTab("audit")}
@@ -368,7 +404,12 @@ export default function Home() {
         </div>
       </header>
 
-      {activeTab === "search" ? (
+      {/* Case Mode stays mounted so its state survives tab switches */}
+      <div className="case-container" style={{ display: activeTab === "case" ? "block" : "none" }}>
+        <CaseMode apiPost={apiPost} />
+      </div>
+
+      {activeTab === "case" ? null : activeTab === "search" ? (
         <div className="dashboard-grid">
           {/* Filters Panel */}
           <aside className="sidebar-panel glass">
@@ -644,6 +685,10 @@ export default function Home() {
                   </div>
                 )}
 
+                {/* 2b. Deterministic certainty rating + quantitative evidence map */}
+                <CertaintyCard certainty={results.certainty} />
+                <EvidenceMap map={results.evidence_map} />
+
                 {/* 3. Main Synthesis & Claims Layout */}
                 <div className="claims-source-grid">
                   {/* Claims Panel */}
@@ -669,23 +714,6 @@ export default function Home() {
                       </div>
                     ) : results.synthesis && results.synthesis.recommendation ? (
                       <div className="synthesis-container">
-                        <div className="synthesis-header">
-                          {results.synthesis.evidence_certainty && (
-                            <>
-                              {results.synthesis.evidence_certainty.recommendation_strength && (
-                                <span className={`synth-badge ${results.synthesis.evidence_certainty.recommendation_strength.toLowerCase() === 'strong' ? 'strong' : 'conditional'}`}>
-                                  {results.synthesis.evidence_certainty.recommendation_strength} Recommendation
-                                </span>
-                              )}
-                              {results.synthesis.evidence_certainty.evidence_quality && (
-                                <span className={`synth-badge ${results.synthesis.evidence_certainty.evidence_quality.toLowerCase().replace(' ', '-')}`}>
-                                  {results.synthesis.evidence_certainty.evidence_quality} Quality
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </div>
-
                         {/* Evidence Clusters Summary */}
                         {results.evidence_clusters && results.evidence_clusters.length > 0 && (
                           <div style={{ marginBottom: "1rem" }}>

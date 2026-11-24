@@ -111,3 +111,42 @@ def test_treatment_naive_is_not_a_prior_therapy():
     assert prof["priors"] == [] and prof["treatment_naive"] is True
     row = assess_study("Previously untreated patients with NSCLC received first-line pembrolizumab.", "", prof)
     assert {c["dimension"]: c["status"] for c in row["cells"]}["Line of therapy"] == "match"
+
+
+def test_marker_name_is_combined_with_value():
+    facts = [{"field": "cancer_type", "value": "non-small cell lung cancer"},
+             {"field": "biomarker", "name": "EGFR", "value": "wild-type"},
+             {"field": "biomarker", "name": "KRAS", "value": "G12C mutation"},
+             {"field": "performance_status", "name": None, "value": "0"}]
+    q, intent = build_case_query("Is pembrolizumab appropriate?", facts)
+    assert "KRAS G12C mutation" in q            # positive driver kept in the search text
+    assert "EGFR wild-type" not in q             # negatives constrain the intent instead
+    assert intent.biomarker_status in ("EGFR wild-type", "KRAS-mutant")
+    prof = _patient_profile(facts)
+    assert prof["ecog"] == 0
+    assert {b for _, b in prof["biomarkers"]} >= {"EGFR wild-type", "KRAS-mutant"}
+
+
+def test_targeted_drug_implies_population_and_negatives_stay_out_of_query():
+    facts = [{"field": "cancer_type", "value": "non-small cell lung cancer"},
+             {"field": "biomarker", "name": "EGFR", "value": "wild-type"},
+             {"field": "biomarker", "name": "PD-L1", "value": "TPS 45%"}]
+    q, intent = build_case_query("Is pembrolizumab appropriate?", facts)
+    assert "EGFR" not in q and "TPS 45%" in q
+    assert intent.biomarker_status == "EGFR wild-type"
+    row = assess_study("Osimertinib with or without bevacizumab in advanced NSCLC: a phase II study.", "", _patient_profile(facts))
+    cell = {c["dimension"]: c for c in row["cells"]}["Biomarker (EGFR)"]
+    assert cell["status"] == "differs" and "osimertinib" in cell["note"].lower()
+
+
+def test_egfr_exon20_and_adjuvant_studies_are_different_populations():
+    facts = [{"field": "cancer_type", "value": "lung adenocarcinoma"},
+             {"field": "stage", "value": "stage IVB"},
+             {"field": "biomarker", "name": "EGFR", "value": "EGFR exon 19 deletion detected"}]
+    prof = _patient_profile(facts)
+    ex20 = assess_study("Mobocertinib versus chemotherapy in metastatic NSCLC with EGFR exon 20 insertion mutations.", "", prof)
+    assert {c["dimension"]: c["status"] for c in ex20["cells"]}["Biomarker (EGFR)"] == "differs"
+    adj = assess_study("Adjuvant icotinib after complete resection of EGFR-mutant NSCLC.", "", prof)
+    assert {c["dimension"]: c["status"] for c in adj["cells"]}["Stage"] == "differs"
+    miss = {m["variable"] for m in missing_data("Non-Small Cell Lung Cancer", [], "EGFR exon 19 deletion, stage IV, ECOG 1, PD-L1 10%")}
+    assert "KRAS" not in miss and "ALK" not in miss

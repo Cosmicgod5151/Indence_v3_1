@@ -27,6 +27,28 @@ _BIOMARKER_FAMILY = {
 }
 
 
+# Targeted drugs imply the biomarker-defined population a trial enrolled.
+_DRUG_IMPLIES: list[tuple[str, str]] = [
+    (r"osimertinib|gefitinib|erlotinib|afatinib|dacomitinib|amivantamab|lazertinib", "EGFR-mutant"),
+    (r"alectinib|crizotinib|lorlatinib|brigatinib|ceritinib", "ALK-positive"),
+    (r"sotorasib|adagrasib|divarasib", "KRAS-mutant"),
+    (r"trastuzumab|pertuzumab|tucatinib|neratinib|lapatinib|t-dxd|deruxtecan|t-dm1|emtansine", "HER2-positive"),
+    (r"cetuximab|panitumumab", "KRAS/RAS wild-type"),
+    (r"dabrafenib|encorafenib|vemurafenib", "BRAF-mutant"),
+]
+_EXPLICIT_OPPOSITES = {"EGFR wild-type": "EGFR-mutant", "EGFR-mutant": "EGFR wild-type",
+                       "KRAS/RAS wild-type": "KRAS-mutant", "KRAS-mutant": "KRAS/RAS wild-type"}
+
+
+def _implied_biomarkers(text: str) -> list[tuple[str, str]]:
+    out = []
+    for rx, label in _DRUG_IMPLIES:
+        m = re.search(rf"\b(?:{rx})\b", text, re.I)
+        if m:
+            out.append((label, m.group(0)))
+    return out
+
+
 def _sentences(text: str) -> list[str]:
     return [s.strip() for s in re.split(r"(?<=[.!?;])\s+|\n+", text or "") if s.strip()]
 
@@ -44,7 +66,8 @@ def _cell(dimension: str, patient_value: str, status: str, quote: str | None = N
 
 
 def _patient_profile(facts: list[dict[str, Any]]) -> dict[str, Any]:
-    vals = lambda fld: [f["value"] for f in facts if f.get("field") == fld]  # noqa: E731
+    from .case_context import fact_label
+    vals = lambda fld: [fact_label(f) for f in facts if f.get("field") == fld]  # noqa: E731
     disease = _extractor.extract_intent(" ".join(vals("cancer_type") + vals("histology"))).disease
     biomarkers = []
     for v in vals("biomarker"):
@@ -101,16 +124,44 @@ def assess_study(study_text: str, title: str, profile: dict[str, Any]) -> dict[s
         same_family = {b for b in study_bios if _BIOMARKER_FAMILY.get(b, b) == family}
         fam_rx = {"HER2": r"her2|erbb2", "HR": r"hormone[- ]receptor|\bhr\b|\ber\b|estrogen", "EGFR": r"egfr",
                   "RAS": r"\b[kn]?ras\b", "BRAF": r"braf", "ALK": r"\balk\b", "PD-L1": r"pd-?l1", "MSI": r"msi|mmr"}.get(family, re.escape(family))
+        implied = [(lab, drug) for lab, drug in _implied_biomarkers(text) if _BIOMARKER_FAMILY.get(lab, lab) == family]
+        if family == "EGFR" and label == "EGFR-mutant":
+            pt_ex20 = bool(re.search(r"exon\s*20|ex20ins|insertion", raw_value, re.I))
+            st_ex20 = bool(re.search(r"exon\s*20\s*insertion|ex20ins|exon\s*20", text, re.I)) or bool(
+                re.search(r"mobocertinib|amivantamab|sunvozertinib|furmonertinib", text, re.I))
+            st_common = bool(re.search(r"exon\s*19|l858r|common (?:egfr )?mutation|sensitizing", text, re.I))
+            if st_ex20 and not st_common and not pt_ex20:
+                cells.append(_cell("Biomarker (EGFR)", raw_value, "differs",
+                                   _sentence_with(text, r"exon\s*20|mobocertinib|amivantamab|insertion"),
+                                   "Study enrolled EGFR exon 20 insertions — a distinct, TKI-resistant subgroup"))
+                continue
+            if pt_ex20 and st_common and not st_ex20:
+                cells.append(_cell("Biomarker (EGFR)", raw_value, "differs", _sentence_with(text, r"exon\s*19|l858r"),
+                                   "Study enrolled common EGFR mutations, not exon 20 insertions"))
+                continue
         if label in study_bios:
             cells.append(_cell(f"Biomarker ({family})", raw_value, "match", _sentence_with(text, fam_rx)))
         elif same_family:
             cells.append(_cell(f"Biomarker ({family})", raw_value, "differs", _sentence_with(text, fam_rx),
                                f"Study subgroup: {', '.join(sorted(same_family))}"))
+        elif implied:
+            lab, drug = implied[0]
+            compatible = lab == label or (family == "HER2" and label == "HER2-positive" and lab == "HER2-positive")
+            if label == "KRAS-mutant" and lab == "KRAS-mutant" and "g12c" not in raw_value.lower():
+                compatible = False  # KRAS G12C inhibitors need G12C specifically
+            cells.append(_cell(f"Biomarker ({family})", raw_value, "match" if compatible else "differs",
+                               _sentence_with(text, re.escape(drug)),
+                               f"Inferred: {drug} trials enrol {lab} patients"))
         else:
             cells.append(_cell(f"Biomarker ({family})", raw_value, "not_reported"))
 
-    # Stage / extent
-    if profile["stage"]:
+    # Stage / extent ("adjuvant"/"resected" trials enrol early-stage patients)
+    early_setting = re.search(r"(?<!neo)adjuvant|resected|resectable|post-?operative|stage\s*i{1,3}[ab]?\s*(?:-|–|to)\s*iii", text, re.I)
+    if profile["stage"] and early_setting and profile["stage"].startswith("Metastatic"):
+        cells.append(_cell("Stage", profile["stage_text"] or profile["stage"], "differs",
+                           _sentence_with(text, r"adjuvant|resect|post-?operative|stage"),
+                           "Study is in the adjuvant / resected (early-stage) setting"))
+    elif profile["stage"]:
         if meta.stage and (profile["stage"].split()[0].lower() in meta.stage.lower()):
             cells.append(_cell("Stage", profile["stage_text"] or profile["stage"], "match",
                                _sentence_with(text, r"metasta|stage\s*iv|advanced|early|locali[sz]ed|stage\s*i")))

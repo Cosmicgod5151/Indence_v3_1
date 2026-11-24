@@ -214,8 +214,16 @@ def missing_data(disease: str | None, facts: list[CaseFact], text: str) -> list[
     rules = MISSING_DATA_RULES.get(disease or "", []) or []
     seen = {r[0] for r in rules}
     rules = rules + [r for r in _GENERIC_MISSING if r[0] not in seen]
+    # Oncogenic drivers in NSCLC are (near-)mutually exclusive: once a positive
+    # driver is documented, the other driver tests are no longer decision-critical.
+    driver_found = bool(re.search(
+        r"egfr[^.;,]{0,25}(?:exon|l858r|deletion|mutat|positive)|alk[^.;,]{0,20}(?:positive|rearranged|fusion detected)"
+        r"|ros1[^.;,]{0,15}positive|kras[^.;,]{0,10}g12", hay))
+    drivers = {"EGFR", "ALK", "ROS1", "KRAS"}
     out = []
     for label, terms, why in rules:
+        if driver_found and disease == "Non-Small Cell Lung Cancer" and label in drivers:
+            continue
         if not any(t in hay for t in terms):
             out.append({"variable": label, "why_it_matters": why})
     return out
@@ -290,6 +298,18 @@ async def extract_case_facts(text: str, llm_client: Any | None) -> dict[str, Any
 
 
 # --------------------------- case-aware query construction ---------------------------
+def fact_label(f: dict[str, Any]) -> str:
+    """Value with its marker/test name, e.g. {'name': 'EGFR', 'value': 'wild-type'} -> 'EGFR wild-type'.
+    Models sometimes put the name only in the separate `name` field."""
+    value = str(f.get("value") or "").strip()
+    name = str(f.get("name") or "").strip()
+    if f.get("field") == "performance_status" and re.fullmatch(r"[0-4](?:\s*-\s*[0-4])?", value):
+        name = name or "ECOG"
+    if name and name.lower() not in value.lower():
+        return f"{name} {value}"
+    return value
+
+
 _NAIVE_RE = re.compile(r"treatment[- ]na[iï]ve|untreated|no prior|not (?:previously )?treated|none\b|newly diagnosed", re.I)
 
 
@@ -301,12 +321,18 @@ def is_treatment_naive(value: str) -> bool:
 def build_case_query(question: str, facts: list[dict[str, Any]]) -> tuple[str, ClinicalQueryIntent]:
     """Combine the clinician's question with CONFIRMED facts into a retrieval query
     and population constraints (intent). Prior therapies set the line of therapy."""
+    facts = [{**f, "value": fact_label(f)} for f in facts]
     by = lambda fld: [f for f in facts if f.get("field") == fld]  # noqa: E731
     parts = [question.strip().rstrip("?")]
     ctx = []
     for f in by("cancer_type")[:1] + by("histology")[:1] + by("stage")[:1]:
         ctx.append(f["value"])
-    bios = [f["value"] for f in by("biomarker")][:5]
+    # Negative / wild-type results constrain the population (via intent) but are
+    # kept OUT of the search text: lexical matching on "EGFR" would otherwise pull
+    # in EGFR-targeted trials for an EGFR wild-type patient.
+    negative_rx = re.compile(r"negative|wild[- ]?type|\bwt\b|not detected|absent|no (?:mutation|alteration)", re.I)
+    all_bios = [f["value"] for f in by("biomarker")]
+    bios = [v for v in all_bios if not negative_rx.search(v)][:5]
     if bios:
         ctx.append("; ".join(bios))
     priors = [f["value"] for f in by("prior_therapy") if not is_treatment_naive(f["value"])]
@@ -317,9 +343,10 @@ def build_case_query(question: str, facts: list[dict[str, Any]]) -> tuple[str, C
         ctx.append("treatment-naive (first-line)")
     if by("line_of_therapy"):
         ctx.append(by("line_of_therapy")[0]["value"])
+    ctx = list(dict.fromkeys(ctx))
     query = parts[0] + (" — patient context: " + ", ".join(ctx) if ctx else "") + "?"
 
-    intent = ClinicalIntentExtractor().extract_intent(" ".join([question] + ctx))
+    intent = ClinicalIntentExtractor().extract_intent(" ".join([question] + ctx + all_bios))
     if priors and not intent.line_of_therapy:
         intent.line_of_therapy = "Previously treated / Relapsed"
         intent.population_constraints["line_of_therapy"] = intent.line_of_therapy
