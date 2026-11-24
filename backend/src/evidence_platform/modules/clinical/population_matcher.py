@@ -83,13 +83,13 @@ class PopulationMatchEvaluator:
             return any(pp in text_chunk for pp in pos_patterns)
 
         b_mappings = [
-            (r"\bher2[- ]positive\b|\bher2\+\b|\bher2[- ]amplified\b|\bher2\s+positive\b", "HER2-positive"),
+            (r"\bher2[- ]positive\b|\bher2\s*\+(?!\w)|\bher2[- ]amplified\b|\bher2\s+positive\b", "HER2-positive"),
             (r"\bher2[- ]low\b|\bher2\s+low\b", "HER2-low"),
             (r"\bher2[- ]ultralow\b", "HER2-ultralow"),
-            (r"\bher2[- ]negative\b|\bher2-\b", "HER2-negative"),
+            (r"\bher2[- ]negative\b|\bher2\s*-(?![\w-])", "HER2-negative"),
             (r"\btriple[- ]negative\b|\btnbc\b", "Triple-negative"),
-            (r"\bhr[- ]positive\b|\bhr\+\b|\ber[- ]positive\b|\ber\+\b", "HR-positive"),
-            (r"\begfr[- ]mutant\b|\begfr\s+mutation\b|\begfr\+\b", "EGFR-mutant"),
+            (r"\bhr[- ]positive\b|\bhr\s*\+(?!\w)|\ber[- ]positive\b|\ber\s*\+(?!\w)|\bhormone[- ]receptor[- ]positive\b", "HR-positive"),
+            (r"\begfr[- ]mutant\b|\begfr[- ]mutated\b|\begfr\s+mutation\b|\begfr\s*\+(?!\w)", "EGFR-mutant"),
             (r"\begfr\s+wild[- ]type\b|\begfr\s+wt\b", "EGFR wild-type"),
             (r"\bkras\s+wild[- ]type\b|\bras\s+wild[- ]type\b|\bkras\s+wt\b", "KRAS/RAS wild-type")
         ]
@@ -125,9 +125,9 @@ class PopulationMatchEvaluator:
 
         # Treatment Line
         line = None
-        if "first-line" in text_lower or "1l" in text_lower or "front-line" in text_lower:
+        if re.search(r"\bfirst[- ]line\b|\b1l\b|\bfront[- ]line\b", text_lower):
             line = "First-line (1L)"
-        elif "second-line" in text_lower or "2l" in text_lower or "previously treated" in text_lower:
+        elif re.search(r"\bsecond[- ]line\b|\b2l\b|\bpreviously treated\b", text_lower):
             line = "Second-line (2L)"
 
         # Trial Phase
@@ -320,6 +320,7 @@ class PopulationMatchEvaluator:
                 # Attach population match score to candidate object dynamically or return tuple
                 setattr(cand, "population_match_score", score)
                 setattr(cand, "paper_metadata", paper_meta)
+                setattr(cand, "population_match_reason", reason)
                 included.append(cand)
 
         return included, excluded

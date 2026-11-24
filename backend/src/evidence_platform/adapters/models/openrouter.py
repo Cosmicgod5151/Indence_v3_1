@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 import json
 import re
@@ -129,16 +130,169 @@ Return ONLY a raw JSON object matching this schema. Do not output text outside t
 - Do NOT produce redundant claims. If evidence E01 and E02 both show the same drug improves OS, create ONE claim synthesizing both, citing both evidence IDs.
 - The "recommendation" section synthesizes across all evidence. The "direct_answer_claims" provide atomic grounding. These serve different purposes — both are required.
 - If the evidence does not support answering the query, set status to "insufficient_evidence", leave synthesis sections as null, and explain in abstention_reason.
+
+### LENGTH LIMITS (STRICT)
+- Every "text" field: at most 60 words.
+- supporting_evidence: at most 4 items. direct_answer_claims: at most 6 atomic claims. limitations_claims: at most 2 items.
+- Return "evidence_summary_claims": [] (the recommendation already summarises).
+- Output compact JSON only. Do not deliberate at length; answer directly.
 """
 
 
-class OpenRouterLLMClient(LLMClient):
-    """LLM client using OpenRouter API with evidence synthesis prompt."""
+# OpenAI-compatible chat endpoints. A model spec may be prefixed with the
+# provider ("gemini:gemini-2.5-flash"); unprefixed specs use OpenRouter.
+# Providers whose API key is not configured are skipped.
+PROVIDERS: dict[str, tuple[str, str]] = {
+    "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "LLM_API_KEY"),
+    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GEMINI_API_KEY"),
+    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY"),
+    "cerebras": ("https://api.cerebras.ai/v1/chat/completions", "CEREBRAS_API_KEY"),
+}
 
-    def __init__(self, api_key: str, model_name: str = "nvidia/nemotron-3-super-120b-a12b"):
+# Errors worth trying the next model for (rate limits, credit limits, outages,
+# timeouts, empty/invalid output). Models that hit 429/402 are skipped for a while.
+_COOLDOWN_S = 90.0
+_cooldown_until: dict[str, float] = {}
+
+
+def parse_model_chain(spec: str) -> list[tuple[str, str]]:
+    chain = []
+    for item in [x.strip() for x in (spec or "").split(",") if x.strip()]:
+        prov, _, rest = item.partition(":")
+        if prov in PROVIDERS and rest:
+            chain.append((prov, rest))
+        else:
+            chain.append(("openrouter", item))
+    return chain
+
+
+class OpenRouterLLMClient(LLMClient):
+    """Chat-completions client with an ordered model fallback chain.
+
+    ``model_name`` is a comma-separated chain, e.g.
+    "baidu/ernie-5.5-flash-preview:free,nvidia/nemotron-3-ultra-550b-a55b:free".
+    Each request tries the chain in order and returns the first valid JSON
+    answer; if every model fails, LLMUnavailableError is raised (and the
+    pipeline abstains explicitly).
+    """
+
+    def __init__(self, api_key: str, model_name: str = "meta-llama/llama-3.3-70b-instruct", timeout_s: float = 90.0):
         self.api_key = api_key
         self.model_name = model_name
-        self.endpoint = "https://openrouter.ai/api/v1/chat/completions"
+        self.timeout_s = timeout_s
+        self.chain = parse_model_chain(model_name) or [("openrouter", "meta-llama/llama-3.3-70b-instruct")]
+        self.endpoint = PROVIDERS["openrouter"][0]
+
+    def _key_for(self, provider: str) -> str:
+        if provider == "openrouter":
+            return self.api_key
+        return os.environ.get(PROVIDERS[provider][1], "")
+
+    @staticmethod
+    def _headers_for(key: str) -> dict[str, str]:
+        return {
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/indence-rag",
+            "X-Title": "Indence RAG Platform",
+        }
+
+    def _headers(self) -> dict[str, str]:
+        return self._headers_for(self.api_key)
+
+    @staticmethod
+    def _parse_json(content: str) -> dict[str, Any]:
+        """Robustly extract a JSON object from a model response (handles ```json fences)."""
+        cleaned = content.strip()
+        if "```" in cleaned:
+            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.MULTILINE)
+            cleaned = re.sub(r"```$", "", cleaned, flags=re.MULTILINE).strip()
+        start = cleaned.find("{")
+        if start < 0:
+            raise ValueError("No JSON object in model response")
+        # raw_decode parses the FIRST complete object and ignores trailing text
+        # (some models append a second object or commentary -> "Extra data").
+        obj, _end = json.JSONDecoder().raw_decode(cleaned[start:])
+        if not isinstance(obj, dict):
+            raise ValueError("Model response JSON is not an object")
+        return obj
+
+    async def _call_one(self, provider: str, model: str, system_prompt: str, user_content: str,
+                        max_tokens: int, temperature: float) -> tuple[dict[str, Any], dict[str, Any]]:
+        import time as _time
+        url = PROVIDERS[provider][0]
+        headers = self._headers_for(self._key_for(provider))
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        # Many free models are "thinking" models; unbounded hidden reasoning can
+        # consume the whole token budget before any JSON is written.
+        if provider == "openrouter":
+            payload["reasoning"] = {"effort": "low"}
+        elif provider == "gemini":
+            payload["reasoning_effort"] = "low"
+        t0 = _time.perf_counter()
+        # httpx timeouts are per network operation; wait_for enforces a hard
+        # overall deadline (providers can keep a slow request alive for minutes).
+        async with httpx.AsyncClient(timeout=self.timeout_s) as client:
+            response = await asyncio.wait_for(client.post(url, headers=headers, json=payload), timeout=self.timeout_s)
+            for optional in ("response_format", "reasoning", "reasoning_effort"):
+                if response.status_code == 400 and optional in payload and optional.split("_")[0] in response.text.lower():
+                    payload.pop(optional)  # some models reject JSON mode / reasoning controls
+                    response = await asyncio.wait_for(client.post(url, headers=headers, json=payload), timeout=self.timeout_s)
+        if response.status_code != 200:
+            if response.status_code in (402, 429):
+                _cooldown_until[f"{provider}:{model}"] = _time.monotonic() + _COOLDOWN_S
+            raise LLMUnavailableError(f"{provider}:{model} HTTP {response.status_code}: {response.text[:200]}")
+        res_data = response.json()
+        content = (res_data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+        if not content.strip():
+            raise LLMUnavailableError(f"{provider}:{model} returned empty content")
+        parsed = self._parse_json(content)
+        meta = {
+            "model": f"{provider}:{res_data.get('model', model)}" if provider != "openrouter" else res_data.get("model", model),
+            "latency_s": round(_time.perf_counter() - t0, 3),
+            "usage": res_data.get("usage", {}),
+        }
+        return parsed, meta
+
+    async def complete_json(
+        self, system_prompt: str, user_content: str, max_tokens: int = 1500, temperature: float = 0.0
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """JSON completion over the fallback chain.
+
+        Returns (parsed_json, meta). Raises LLMUnavailableError when every model
+        in the chain fails, so callers degrade explicitly — never a silent mock answer.
+        """
+        import time as _time
+        errors: list[str] = []
+        attempted: list[str] = []
+        for provider, model in self.chain:
+            tag = f"{provider}:{model}"
+            if not self._key_for(provider):
+                continue
+            if _cooldown_until.get(tag, 0) > _time.monotonic():
+                errors.append(f"{tag} skipped (cooling down after rate limit)")
+                continue
+            attempted.append(tag)
+            try:
+                parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens, temperature)
+                meta["attempted_models"] = attempted
+                meta["fallback_errors"] = errors
+                return parsed, meta
+            except LLMUnavailableError as e:
+                errors.append(str(e))
+            except Exception as e:
+                errors.append(f"{tag} {type(e).__name__}: {e}")
+            logger.warning("LLM attempt failed (%s); trying next model in chain.", errors[-1][:160])
+        raise LLMUnavailableError(" | ".join(errors) or "No LLM provider configured")
 
     async def generate_answer(self, query: str, evidence_bundle: dict[str, Any]) -> dict[str, Any]:
         # evidence_bundle format: {"snapshot_id": str, "chunks": [{"id": str, "text": str, "evidence_id": str, "study_type": str, ...}]}
@@ -247,116 +401,93 @@ Rejected Subgroups: {rejected_str}"""
             f"Evidence Context:\n{context_str}"
         )
 
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/indence-rag",
-            "X-Title": "Indence RAG Platform"
-        }
-
-        payload = {
-            "model": self.model_name,
-            "messages": [
-                {"role": "system", "content": EVIDENCE_SYNTHESIS_SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0.0,
-            "max_tokens": 4096
-        }
-
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(self.endpoint, headers=headers, json=payload)
-                if response.status_code != 200:
-                    logger.error(f"OpenRouter returned status {response.status_code}: {response.text}")
-                    return await self._fallback_answer(query, chunks, f"OpenRouter API error: {response.text}")
-                
-                res_data = response.json()
-                content = res_data["choices"][0]["message"]["content"].strip()
-                
-                # Robustly extract JSON object from response (handling markdown ```json blocks)
-                cleaned = content
-                if "```" in cleaned:
-                    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.MULTILINE)
-                    cleaned = re.sub(r"```$", "", cleaned, flags=re.MULTILINE).strip()
-                
-                match = re.search(r"(\{.*\})", cleaned, re.DOTALL)
-                if match:
-                    cleaned = match.group(1)
-                
-                parsed_json = json.loads(cleaned)
-                return parsed_json
-        except Exception as e:
-            logger.error(f"Failed to generate answer via OpenRouter: {e}")
-            return await self._fallback_answer(query, chunks, f"Error calling OpenRouter: {str(e)}")
+            parsed_json, meta = await self.complete_json(
+                EVIDENCE_SYNTHESIS_SYSTEM_PROMPT, user_content, max_tokens=4000
+            )
+        except LLMUnavailableError as e:
+            logger.error("OpenRouter synthesis failed: %s", e)
+            return llm_unavailable_answer(str(e), self.model_name)
+        parsed_json["_meta"] = meta
+        return parsed_json
 
-    async def _fallback_answer(self, query: str, chunks: list[dict], error_msg: str) -> dict[str, Any]:
-        """Gracefully fall back to local structured evidence synthesis if LLM API is unreachable."""
-        from .mock import MockLLMClient
-        logger.warning(f"OpenRouter API call failed ({error_msg}). Falling back to local evidence synthesis.")
-        mock = MockLLMClient()
-        return await mock.generate_answer(query, {"chunks": chunks})
+
+class LLMUnavailableError(RuntimeError):
+    """Raised when the hosted LLM cannot produce a valid response."""
+
+
+def llm_unavailable_answer(error_msg: str, model_name: str) -> dict[str, Any]:
+    """Explicit abstention when the LLM provider fails.
+
+    Earlier versions silently substituted a template ("mock") answer here and
+    still reported status="answer" — a clinical-safety bug. Now the user sees
+    that the generator was unavailable and no unverified text is shown.
+    """
+    return {
+        "status": "insufficient_evidence",
+        "recommendation": None,
+        "clinical_reasoning": None,
+        "supporting_evidence": [],
+        "alternatives": None,
+        "bottom_line": None,
+        "clinical_context": None,
+        "evidence_certainty": None,
+        "direct_answer_claims": [],
+        "evidence_summary_claims": [],
+        "limitations_claims": [],
+        "abstention_reason": "The answer generator (LLM provider) was unavailable, so no verified synthesis could be produced. Retrieved evidence is still listed for manual review.",
+        "llm_error": error_msg[:500],
+        "_meta": {"model": model_name, "error": True},
+    }
 
 
 class OpenRouterEntailmentClient(EntailmentClient):
-    """Entailment checker using OpenRouter API with Nvidia Nemotron-3 Super."""
+    """NLI verifier. ``check_entailment_batch`` verifies ALL claims of an answer in
+    a single LLM call (previously one call per claim), which cuts latency and
+    keeps the system inside free-tier request quotas."""
 
-    def __init__(self, api_key: str, model_name: str | None = None):
+    SYSTEM_PROMPT = (
+        "You are a clinical evidence validator performing natural-language inference. "
+        "For each numbered item, compare the CLAIM with its PREMISE (source text) and label it:\n"
+        "- \"entailment\": the claim is fully supported by the premise (numbers must match exactly);\n"
+        "- \"contradiction\": the premise contradicts the claim;\n"
+        "- \"neutral\": the premise does not establish the claim.\n"
+        'Return ONLY JSON: {"labels": ["entailment" | "contradiction" | "neutral", ...]} with exactly one label per item, in order.'
+    )
+
+    def __init__(self, api_key: str, model_name: str | None = None, timeout_s: float = 60.0):
         self.api_key = api_key
-        # Use fast, low-latency classification model for NLI entailment unless explicitly specified
-        self.model_name = model_name if model_name and "nemotron" not in model_name else os.environ.get("ENTAILMENT_MODEL_NAME", "meta-llama/llama-3.3-70b-instruct")
-        self.endpoint = "https://openrouter.ai/api/v1/chat/completions"
+        self.model_name = os.environ.get("ENTAILMENT_MODEL_NAME") or model_name or "meta-llama/llama-3.3-70b-instruct"
+        self._llm = OpenRouterLLMClient(api_key, self.model_name, timeout_s=timeout_s)
+        self.endpoint = PROVIDERS["openrouter"][0]
+
+    @staticmethod
+    def _norm(label: Any) -> str:
+        label = str(label or "").lower()
+        if "entail" in label:
+            return "entailment"
+        if "contradict" in label:
+            return "contradiction"
+        return "neutral"
+
+    async def check_entailment_batch(self, pairs: list[tuple[str, str]]) -> list[str]:
+        if not pairs:
+            return []
+        items = []
+        for i, (premise, hypothesis) in enumerate(pairs, start=1):
+            items.append(f"[{i}] PREMISE: {premise[:3000]}\n[{i}] CLAIM: {hypothesis}")
+        user = "\n\n".join(items)
+        try:
+            parsed, _meta = await self._llm.complete_json(self.SYSTEM_PROMPT, user, max_tokens=60 + 12 * len(pairs))
+            labels = parsed.get("labels") or []
+            if not isinstance(labels, list):
+                raise ValueError("labels is not a list")
+        except Exception as e:
+            logger.error("Batched entailment failed: %s", str(e)[:300])
+            return ["unverified"] * len(pairs)
+        out = [self._norm(x) for x in labels[: len(pairs)]]
+        out += ["unverified"] * (len(pairs) - len(out))
+        return out
 
     async def check_entailment(self, premise: str, hypothesis: str) -> str:
-        system_prompt = (
-            "You are a clinical evidence validator. Compare the premise and hypothesis and output exactly one label: 'entailment', 'contradiction', or 'neutral'.\n"
-            "Rules:\n"
-            "- Output 'entailment' if the hypothesis is fully supported and justified by the premise.\n"
-            "- Output 'contradiction' if the hypothesis directly contradicts or denies the premise.\n"
-            "- Output 'neutral' if the premise does not provide enough information to confirm or deny the hypothesis.\n"
-            "Return ONLY the single word label, lowercase, with no punctuation or other text."
-        )
-
-        user_content = (
-            f"Premise (Source Text):\n{premise}\n\n"
-            f"Hypothesis (Claim):\n{hypothesis}"
-        )
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/indence-rag",
-            "X-Title": "Indence RAG Platform"
-        }
-
-        payload = {
-            "model": self.model_name,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
-            ],
-            "temperature": 0.0,
-            "max_tokens": 100
-        }
-
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(self.endpoint, headers=headers, json=payload)
-                if response.status_code != 200:
-                    logger.error(f"OpenRouter entailment returned status {response.status_code}: {response.text}")
-                    return "neutral"
-                
-                res_data = response.json()
-                label = res_data["choices"][0]["message"]["content"].strip().lower()
-                
-                # Sanitize response to match exact strings
-                if "entailment" in label:
-                    return "entailment"
-                elif "contradiction" in label:
-                    return "contradiction"
-                else:
-                    return "neutral"
-        except Exception as e:
-            logger.error(f"Failed to check entailment via OpenRouter: {e}")
-            return "neutral"
+        return (await self.check_entailment_batch([(premise, hypothesis)]))[0]

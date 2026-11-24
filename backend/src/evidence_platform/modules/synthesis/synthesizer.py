@@ -28,6 +28,9 @@ class SynthesizedAnswer(NamedTuple):
     contradiction_analysis: dict[str, Any] | None
     citation_audit: list[dict[str, Any]]
     failure_analysis: list[dict[str, Any]]
+    # Provider metadata (model id, latency, token usage, error flag)
+    llm_meta: dict[str, Any] | None = None
+    llm_error: str | None = None
 
 
 _EMPTY_SYNTHESIS = dict(
@@ -156,4 +159,6 @@ class AnswerSynthesizer:
             contradiction_analysis=contradiction_info,
             citation_audit=audit_list,
             failure_analysis=failures_list,
+            llm_meta=res.get("_meta"),
+            llm_error=res.get("llm_error"),
         )

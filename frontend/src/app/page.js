@@ -45,23 +45,32 @@ export default function Home() {
   const [traceDetails, setTraceDetails] = useState(null);
   const [traceLoading, setTraceLoading] = useState(false);
 
-  const [apiBase, setApiBase] = useState("http://localhost:8000/api/v1");
+  const [apiBase, setApiBase] = useState(() =>
+    typeof window !== "undefined"
+      ? `http://${window.location.hostname || "localhost"}:8000/api/v1`
+      : "http://localhost:8000/api/v1"
+  );
   const [csrfToken, setCsrfToken] = useState("");
   const [expandedContradictions, setExpandedContradictions] = useState({});
+  const [highlightSource, setHighlightSource] = useState(null);
 
   // Fetch CSRF token on mount using dynamic API base host
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const host = window.location.hostname || "localhost";
-      const base = `http://${host}:8000/api/v1`;
-      setApiBase(base);
+      const base = apiBase;
       fetch(`${base}/csrf-token`, { credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
           if (data && data.csrf_token) setCsrfToken(data.csrf_token);
         })
         .catch((err) => console.error("Could not fetch CSRF token", err));
+      // Restore an existing session after a page refresh
+      fetch(`${base}/auth/me`, { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => { if (data && data.email) setUser(data); })
+        .catch(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogin = async (e) => {
@@ -150,39 +159,11 @@ export default function Home() {
         credentials: "include"
       });
 
-      // 3. Auto-login if session expired (401 Unauthorized)
+      // 3. Expired session: return to the login screen (no silent re-login).
       if (res.status === 401) {
-        const loginRes = await fetch(`${baseUrl}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            email: email || "clinician@indence.org", 
-            password: password || "DoctorPassword1" 
-          }),
-          credentials: "include",
-        });
-
-        if (loginRes.ok) {
-          const loginData = await loginRes.json();
-          setUser(loginData);
-
-          // Retry search request after successful login
-          res = await fetch(`${baseUrl}/search`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRF-Token": currentCsrf || ""
-            },
-            body: JSON.stringify({
-              query,
-              filters: {
-                study_types: selectedTypes,
-                year_from: parseInt(yearFrom) || 2000
-              }
-            }),
-            credentials: "include"
-          });
-        }
+        setUser(null);
+        setLoginError("Your session has expired. Please sign in again.");
+        throw new Error("Session expired");
       }
 
       if (!res.ok) {
@@ -199,6 +180,7 @@ export default function Home() {
 
     try {
       let data = null;
+      let usedBase = apiBase;
       try {
         // First try primary apiBase
         data = await executeSearchRequest(apiBase);
@@ -211,6 +193,7 @@ export default function Home() {
           console.warn(`Primary fetch failed, retrying on fallback API target: ${altHost}`);
           data = await executeSearchRequest(altHost);
           setApiBase(altHost);
+          usedBase = altHost;
         } else {
           throw firstErr;
         }
@@ -222,7 +205,7 @@ export default function Home() {
       }
 
       if (data.trace_id) {
-        fetchTrace(data.trace_id);
+        fetchTrace(data.trace_id, usedBase);
       }
     } catch (err) {
       if (err.message && err.message.includes("Failed to fetch")) {
@@ -235,10 +218,10 @@ export default function Home() {
     }
   };
 
-  const fetchTrace = async (traceId) => {
+  const fetchTrace = async (traceId, base = apiBase) => {
     setTraceLoading(true);
     try {
-      const res = await fetch(`${apiBase}/traces/${traceId}`, { credentials: "include" });
+      const res = await fetch(`${base}/traces/${traceId}`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setTraceDetails(data);
@@ -275,6 +258,30 @@ export default function Home() {
           &ldquo;{span.text}&rdquo;
         </p>
       </div>
+    );
+  };
+
+  // Map evidence IDs (E01...) to resolvable citation metadata from the API.
+  const sourceById = {};
+  ((results && results.evidence_sources) || []).forEach((src) => { sourceById[src.evidence_id] = src; });
+  const renderCite = (rawId, key) => {
+    const evId = String(rawId).split(".S")[0];
+    const src = sourceById[evId];
+    return (
+      <button
+        type="button"
+        key={key}
+        className={`citation-reference cite-btn ${highlightSource === evId ? "active" : ""}`}
+        title={src ? `${src.title} (${src.year || "n.d."}) · ${src.hierarchy_label || src.study_type}` : String(rawId)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setHighlightSource(evId);
+          const el = typeof document !== "undefined" ? document.getElementById(`src-${evId}`) : null;
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }}
+      >
+        {rawId}
+      </button>
     );
   };
 
@@ -331,7 +338,7 @@ export default function Home() {
           <div className="logo-icon"></div>
           <div>
             <h1 style={{ fontSize: "1.25rem", fontWeight: "700" }}>Indence</h1>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Oncology RAG Platform</p>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Clinical Evidence Reasoning Engine</p>
           </div>
         </div>
 
@@ -647,8 +654,18 @@ export default function Home() {
 
                     {results.status === "insufficient_evidence" ? (
                       <div className="glass" style={{ padding: "1.5rem", borderLeft: "4px solid var(--accent-rose)" }}>
-                        <h3 style={{ color: "var(--accent-rose)", marginBottom: "0.5rem" }}>Abstention Triggered</h3>
+                        <h3 style={{ color: "var(--accent-rose)", marginBottom: "0.5rem" }}>Abstention Triggered — no unverified answer shown</h3>
                         <p>{results.abstention_reason}</p>
+                        {results.llm_error && (
+                          <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.5rem", fontFamily: "monospace" }}>
+                            Provider error: {results.llm_error}
+                          </p>
+                        )}
+                        {results.evidence_sources && results.evidence_sources.length > 0 && (
+                          <p style={{ fontSize: "0.9rem", marginTop: "0.75rem" }}>
+                            {results.evidence_sources.length} retrieved sources are listed under References for manual review.
+                          </p>
+                        )}
                       </div>
                     ) : results.synthesis && results.synthesis.recommendation ? (
                       <div className="synthesis-container">
@@ -693,7 +710,7 @@ export default function Home() {
                           <p className="synth-text">
                             {results.synthesis.recommendation.text}
                             {results.synthesis.recommendation.sentence_ids && results.synthesis.recommendation.sentence_ids.map((sid, s_idx) => (
-                              <span key={s_idx} className="citation-reference">{sid}</span>
+                              renderCite(sid, s_idx)
                             ))}
                           </p>
                         </div>
@@ -708,7 +725,7 @@ export default function Home() {
                             <p className="synth-text" style={{ fontSize: "0.95rem" }}>
                               {results.synthesis.clinical_reasoning.text}
                               {results.synthesis.clinical_reasoning.sentence_ids && results.synthesis.clinical_reasoning.sentence_ids.map((sid, s_idx) => (
-                                <span key={s_idx} className="citation-reference">{sid}</span>
+                                renderCite(sid, s_idx)
                               ))}
                             </p>
                           </div>
@@ -726,7 +743,7 @@ export default function Home() {
                                 <p className="synth-text" style={{ fontSize: "0.95rem" }}>
                                   {ev.text}
                                   {ev.evidence_ids && ev.evidence_ids.map((eid, e_idx) => (
-                                    <span key={e_idx} className="citation-reference">{eid}</span>
+                                    renderCite(eid, e_idx)
                                   ))}
                                 </p>
                               </div>
@@ -743,7 +760,7 @@ export default function Home() {
                             <p className="synth-text" style={{ fontSize: "0.95rem" }}>
                               {results.synthesis.alternatives.text}
                               {results.synthesis.alternatives.sentence_ids && results.synthesis.alternatives.sentence_ids.map((sid, s_idx) => (
-                                <span key={s_idx} className="citation-reference">{sid}</span>
+                                renderCite(sid, s_idx)
                               ))}
                             </p>
                           </div>
@@ -758,6 +775,7 @@ export default function Home() {
                             <div className="synth-section-title" style={{ color: "var(--accent-emerald)" }}>Bottom Line</div>
                             <p className="synth-text" style={{ fontWeight: "500" }}>
                               {results.synthesis.bottom_line.text}
+                              {(results.synthesis.bottom_line.evidence_ids || []).map((eid, e_idx) => renderCite(eid, `bl-${e_idx}`))}
                             </p>
                           </div>
                         )}
@@ -781,7 +799,7 @@ export default function Home() {
                             <p style={{ fontSize: "1rem", lineHeight: "1.5" }}>
                               {claim.text}
                               {claim.sentence_ids && claim.sentence_ids.map((sid, s_idx) => (
-                                <span key={s_idx} className="citation-reference">{sid}</span>
+                                renderCite(sid, s_idx)
                               ))}
                             </p>
                           </div>
@@ -833,7 +851,7 @@ export default function Home() {
                           </p>
                           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                             {activeClaim.evidence_ids.map((id, i) => (
-                              <span key={i} className="citation-reference" style={{ marginLeft: 0 }}>{id}</span>
+                              renderCite(id, i)
                             ))}
                           </div>
                         </div>
@@ -841,6 +859,40 @@ export default function Home() {
                         <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Hover over or select a verified claim card or synthesis section to map and view exact database coordinate highlights.</p>
                       )}
                     </div>
+
+                    {results.evidence_sources && results.evidence_sources.length > 0 && (
+                      <div className="references-panel glass">
+                        <h3 className="references-title">References ({results.evidence_sources.length} sources given to the generator)</h3>
+                        <ol className="references-list">
+                          {results.evidence_sources.map((src) => (
+                            <li
+                              key={src.evidence_id}
+                              id={`src-${src.evidence_id}`}
+                              className={`reference-item ${highlightSource === src.evidence_id ? "highlighted" : ""}`}
+                            >
+                              <div className="reference-head">
+                                <span className="reference-id">{src.evidence_id}</span>
+                                <span className="reference-title">{src.title || src.pmcid}</span>
+                              </div>
+                              <div className="reference-meta">
+                                <span className="ref-badge">{src.hierarchy_label || src.study_type}</span>
+                                {src.year && <span>{src.year}</span>}
+                                {src.section && <span>§ {src.section}</span>}
+                                {src.rerank_score !== null && src.rerank_score !== undefined && (
+                                  <span title="Cross-encoder relevance (0–1)">relevance {src.rerank_score.toFixed(2)}</span>
+                                )}
+                                {src.url && (
+                                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="ref-link">
+                                    {src.pmcid} ↗
+                                  </a>
+                                )}
+                              </div>
+                              <p className="reference-snippet">{src.snippet}</p>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -870,8 +922,13 @@ export default function Home() {
                     <p style={{ fontSize: "1.1rem" }}>&ldquo;{traceDetails.query}&rdquo;</p>
                   </div>
                   <div>
-                    <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>EMBEDDING & RERANKER</span>
-                    <p style={{ fontSize: "1.1rem" }}>BGE-M3 (1024-dim) + BGE-Reranker-v2-m3 (GPU CUDA)</p>
+                    <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>MODELS (RECORDED FOR THIS RUN)</span>
+                    <p style={{ fontSize: "0.95rem", lineHeight: 1.5 }}>
+                      Embedding: {traceDetails.model_versions?.embedding || "—"}<br />
+                      Reranker: {traceDetails.model_versions?.reranker || "—"}<br />
+                      Generator: {traceDetails.model_versions?.llm || traceDetails.generation_model || "—"}<br />
+                      NLI verifier: {traceDetails.model_versions?.entailment || "—"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -881,35 +938,71 @@ export default function Home() {
                   <h3 style={{ marginBottom: "1rem", color: "var(--accent-cyan)" }}>Query Preprocessing & Medical Expansion</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                     <div>
-                      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>NORMALIZED QUERY</span>
-                      <p style={{ fontSize: "1rem", fontFamily: "monospace", color: "var(--text-primary)" }}>{traceDetails.normalization_context.query_text || traceDetails.query}</p>
+                      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>REWRITTEN SEARCH QUERY</span>
+                      <p style={{ fontSize: "1rem", fontFamily: "monospace", color: "var(--text-primary)" }}>{traceDetails.normalization_context.rewritten_query || traceDetails.normalization_context.query_text || traceDetails.query}</p>
                     </div>
                   </div>
                 </div>
               )}
 
+              {traceDetails.timings && (
+                <div className="glass" style={{ padding: "1.5rem" }}>
+                  <h3 style={{ marginBottom: "1rem", color: "var(--accent-cyan)" }}>
+                    Stage Latency ({(traceDetails.timings.request_wall_s ?? traceDetails.timings.total_e2e_s ?? 0).toFixed(2)} s end-to-end)
+                  </h3>
+                  {(() => {
+                    const stages = Object.entries(traceDetails.timings).filter(([k]) => !["total_e2e_s", "request_wall_s"].includes(k));
+                    const maxV = Math.max(0.001, ...stages.map(([, v]) => v));
+                    return (
+                      <div className="timing-bars">
+                        {stages.map(([k, v]) => (
+                          <div key={k} className="timing-row">
+                            <span className="timing-label">{k.replace(/_s$/, "").replace(/_/g, " ")}</span>
+                            <div className="timing-track"><div className="timing-fill" style={{ width: `${(v / maxV) * 100}%` }} /></div>
+                            <span className="timing-value">{v < 0.01 ? `${(v * 1000).toFixed(1)} ms` : `${v.toFixed(2)} s`}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
               <div className="glass" style={{ padding: "1.5rem" }}>
-                <h3 style={{ marginBottom: "1rem", color: "var(--accent-cyan)" }}>Retrieved & Reranked Candidate Tokens</h3>
+                <h3 style={{ marginBottom: "1rem", color: "var(--accent-cyan)" }}>Retrieved Candidates — per-channel ranks and scores</h3>
                 <table className="trace-table">
                   <thead>
                     <tr>
-                      <th>Rank / Order</th>
-                      <th>Chunk ID / Source Reference</th>
-                      <th>Match Type</th>
+                      <th>Fused rank</th>
+                      <th>Chunk ID</th>
+                      <th>Dense rank</th>
+                      <th>Sparse rank</th>
+                      <th>RRF score</th>
+                      <th>Reranker</th>
+                      <th>Population</th>
+                      <th>Stage</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {traceDetails.retrieved_chunk_ids && traceDetails.retrieved_chunk_ids.map((chunkId, idx) => (
-                      <tr key={idx}>
-                        <td style={{ fontFamily: "monospace" }}>#{idx + 1}</td>
-                        <td style={{ fontFamily: "monospace" }}>{chunkId}</td>
-                        <td>
-                          <span style={{ background: "var(--surface-blue-tint)", color: "var(--accent-blue)", fontSize: "0.75rem", padding: "0.2rem 0.5rem", borderRadius: "4px", border: "1px solid rgba(37, 99, 235, 0.2)" }}>
-                            Dense-Sparse Fused Candidate
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {(traceDetails.candidates || []).map((c) => {
+                      const d = c.score_details || {};
+                      return (
+                        <tr key={`${c.chunk_id}-${c.rank}`}>
+                          <td style={{ fontFamily: "monospace" }}>#{c.rank}</td>
+                          <td style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{String(c.chunk_id).slice(0, 12)}…</td>
+                          <td>{d.dense_rank ?? "—"}</td>
+                          <td>{d.sparse_rank ?? "—"}</td>
+                          <td>{typeof c.score === "number" ? c.score.toFixed(4) : "—"}</td>
+                          <td>{typeof d.rerank_score === "number" ? d.rerank_score.toFixed(3) : "—"}</td>
+                          <td>{d.population_match_score ?? "filtered"}</td>
+                          <td>
+                            <span className={`stage-pill ${c.stage === "selected" ? "selected" : ""}`}>
+                              {c.stage === "selected" ? "In evidence bundle" : "Candidate"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

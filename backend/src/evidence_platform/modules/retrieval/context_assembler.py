@@ -1,5 +1,6 @@
 import math
 import logging
+import numpy as np
 from typing import Any, NamedTuple
 from ...ports.models import RerankerClient, EmbeddingClient
 from .retriever import RetrievalCandidate
@@ -21,6 +22,9 @@ class AssembledContext(NamedTuple):
     context_text: str
     selected_candidates: list[RetrievalCandidate]
     total_tokens: int
+    # Full candidate list ordered by the blended relevance score (before MMR /
+    # token budget). Used by the evaluation harness to compute Recall@k etc.
+    ranked_candidates: list[RetrievalCandidate] = []
 
 
 class ContextAssembler:
@@ -63,6 +67,10 @@ class ContextAssembler:
         # Combine Cross-Encoder Reranker score with Population Match Score and Evidence Hierarchy Weight
         combined_scores = []
         for candidate, raw_score in zip(candidates, raw_rerank_scores):
+            try:
+                candidate.rerank_score = float(raw_score)
+            except Exception:
+                pass
             st = (candidate.study_type or "other").lower().strip()
             # Population Match Score factor (+100 to -300)
             pop_score = getattr(candidate, "population_match_score", 0)
@@ -79,9 +87,20 @@ class ContextAssembler:
                 
             combined_scores.append(adjusted_score)
         
-        # 2. Get dense embeddings for candidates to perform MMR diversity check
-        embeddings = await self.embedding_client.embed_documents(passage_texts)
-        candidate_vectors = [dense for dense, _ in embeddings]
+        # 2. Dense vectors for the MMR redundancy term. The retriever attaches the
+        #    vectors already stored in Qdrant; only candidates without one (e.g.
+        #    SQL-fallback results) are re-embedded.
+        candidate_vectors: list[list[float] | None] = [getattr(c, "dense_vector", None) for c in candidates]
+        missing = [i for i, v in enumerate(candidate_vectors) if not v]
+        if missing:
+            embeddings = await self.embedding_client.embed_documents([passage_texts[i] for i in missing])
+            for i, (dense, _) in zip(missing, embeddings):
+                candidate_vectors[i] = dense
+        mat = np.asarray(candidate_vectors, dtype=np.float32)
+        norms = np.linalg.norm(mat, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        mat = mat / norms
+        sim_matrix = mat @ mat.T  # pairwise cosine similarity, computed once
 
         # Normalize combined scores to [0, 1] for MMR calculation
         min_score = min(combined_scores) if combined_scores else 0.0
@@ -111,10 +130,7 @@ class ContextAssembler:
                 # Calculate redundancy: max similarity with already selected items
                 redundancy = 0.0
                 if selected_indices:
-                    redundancy = max(
-                        cosine_similarity(candidate_vectors[idx], candidate_vectors[s_idx])
-                        for s_idx in selected_indices
-                    )
+                    redundancy = float(sim_matrix[idx, selected_indices].max())
                 
                 # MMR formula
                 mmr_score = self.lambda_val * relevance - (1.0 - self.lambda_val) * redundancy
@@ -186,8 +202,10 @@ class ContextAssembler:
         assembled_text = "\n".join(context_blocks)
         total_tokens = count_tokens(assembled_text)
 
+        order = sorted(range(len(candidates)), key=lambda i: combined_scores[i], reverse=True)
         return AssembledContext(
             context_text=assembled_text,
             selected_candidates=selected_candidates,
-            total_tokens=total_tokens
+            total_tokens=total_tokens,
+            ranked_candidates=[candidates[i] for i in order],
         )

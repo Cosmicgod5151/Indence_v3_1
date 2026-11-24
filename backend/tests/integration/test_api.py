@@ -73,7 +73,19 @@ class TestFastAPIEndpoints(unittest.TestCase):
             start_char=0, end_char=50, text="Trastuzumab deruxtecan works well in breast cancer.",
             token_count=10, embedding_model="BGE-M3", embedding_version="1.0.0", index_status="indexed"
         ))
-        
+
+        # A second, independent source: the abstention gate requires >= 2
+        # population-matched sources before any synthesis may be published.
+        self.db.add(SourceDocument(id="doc-2", source="pmc", source_key="PMC002", pmcid="PMC002", title="T-DXd phase III trial", publication_date="2023-01-01"))
+        self.db.add(DocumentRevision(id="rev-2", document_id="doc-2", status="published", parser_version="1", content_sha256="s2", study_type="rct", source_artifact_uri="file:///test2.xml"))
+        self.db.add(DocumentSection(id="sec-2", revision_id="rev-2", section_path=["Results"], section_kind="results", ordinal=1, text="Trastuzumab deruxtecan improved progression-free survival in breast cancer.", source_locator={"kind": "none", "locator": {}}))
+        self.db.add(EvidenceUnit(id="eu-2", section_id="sec-2", ordinal=1, start_char=0, end_char=76, text="Trastuzumab deruxtecan improved progression-free survival in breast cancer.", token_count=10, content_type="prose"))
+        self.db.add(Chunk(
+            id="chunk-2", evidence_unit_id="eu-2", ordinal=1,
+            start_char=0, end_char=76, text="Trastuzumab deruxtecan improved progression-free survival in breast cancer.",
+            token_count=10, embedding_model="BGE-M3", embedding_version="1.0.0", index_status="indexed"
+        ))
+
         self.db.commit()
 
     def tearDown(self):
@@ -165,6 +177,36 @@ class TestFastAPIEndpoints(unittest.TestCase):
         trace_res = self.client.get(f"/api/v1/traces/{trace_id}")
         self.assertEqual(trace_res.status_code, 200)
         self.assertEqual(trace_res.json()["trace_id"], trace_id)
+
+        # Citations carry resolvable source metadata
+        sources = res_data["evidence_sources"]
+        self.assertTrue(len(sources) >= 1)
+        self.assertTrue(all(s["url"].startswith("https://pmc.ncbi.nlm.nih.gov/articles/PMC") for s in sources))
+
+    def test_search_requires_session(self):
+        """No anonymous fallback user: an unauthenticated search is rejected."""
+        csrf_token = self.client.get("/api/v1/csrf-token").cookies["csrf_token"]
+        res = self.client.post("/api/v1/search", json={"query": "T-DXd breast cancer"},
+                               headers={"X-CSRF-Token": csrf_token})
+        self.assertEqual(res.status_code, 401)
+
+    def test_abstention_never_returns_generated_text(self):
+        """Safety: when the gate abstains, no synthesis text may be returned."""
+        self.client.post("/api/v1/auth/login", json={"email": self.email, "password": self.password})
+        csrf_token = self.client.get("/api/v1/csrf-token").cookies["csrf_token"]
+        # Disease with no evidence in the seeded corpus -> population gate abstains
+        res = self.client.post(
+            "/api/v1/search",
+            json={"query": "Is osimertinib effective in EGFR-mutant non-small cell lung cancer?",
+                  "filters": {"study_types": ["rct"]}},
+            headers={"X-CSRF-Token": csrf_token},
+        ).json()
+        self.assertEqual(res["status"], "insufficient_evidence")
+        self.assertTrue(res["abstention_reason"])
+        synth = res["synthesis"]
+        for key in ("recommendation", "clinical_reasoning", "alternatives", "bottom_line"):
+            self.assertIsNone(synth[key])
+        self.assertEqual(synth["supporting_evidence"], [])
 
 
 if __name__ == "__main__":

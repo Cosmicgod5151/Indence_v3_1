@@ -30,6 +30,15 @@ class RetrievalCandidate:
     hierarchy_weight: float = 1.0
     hierarchy_label: str = ""
     unfiltered_retrieval: bool = False
+    title: str = ""
+    section: str = ""
+    dense_vector: list[float] | None = None
+    dense_rank: int | None = None
+    sparse_rank: int | None = None
+    rerank_score: float | None = None
+
+
+RETRIEVAL_MODES = ("dense", "sparse", "hybrid")
 
 
 class RetrievalDebugInfo(NamedTuple):
@@ -58,6 +67,7 @@ class HybridRetriever:
         self.qdrant_client = qdrant_client
         self.normalizer = QueryNormalizer()
         self.rrf_k = rrf_k
+        self.collection_name = "evidence_chunks_1_0_0"
 
     def _mock_local_retrieval(self, query_text: str, filters: dict[str, Any], limit: int, clinical_intent: Any = None) -> list[RetrievalCandidate]:
         """Offline mock search using simple term-matching on database chunks."""
@@ -194,12 +204,20 @@ class HybridRetriever:
         query: str,
         filters: dict[str, Any] | None = None,
         limit: int = 50,
-        clinical_intent: ClinicalQueryIntent | None = None
+        clinical_intent: ClinicalQueryIntent | None = None,
+        mode: str = "hybrid",
     ) -> tuple[list[RetrievalCandidate], RetrievalDebugInfo]:
-        """Perform query normalization, rewriting, hybrid vector search, RRF fusion, and metadata hydration."""
+        """Perform query normalization, rewriting, vector search (dense, sparse or
+        hybrid RRF fusion) and batched metadata hydration.
+
+        ``mode`` exists so the evaluation harness can ablate each retrieval
+        channel against the same corpus snapshot.
+        """
         import time
+        if mode not in RETRIEVAL_MODES:
+            raise ValueError(f"Unknown retrieval mode '{mode}'. Expected one of {RETRIEVAL_MODES}.")
         filters = filters or {}
-        collection_name = "evidence_chunks_1_0_0"
+        collection_name = self.collection_name
 
         # 1. Normalize and rewrite query
         t0 = time.perf_counter()
@@ -259,9 +277,14 @@ class HybridRetriever:
             t_embed, len(dense), len(sparse.get("indices", [])),
         )
 
-        # 4. Query Qdrant with metadata filters
+        # 4. Query Qdrant with metadata filters.
+        # NOTE: earlier versions added `should` conditions on `disease` /
+        # `biomarker` payload keys that are never written at ingestion time.
+        # Qdrant requires >=1 `should` match, so every such query returned zero
+        # hits and was silently re-run. Population constraints are applied
+        # downstream by PopulationMatchEvaluator instead.
         from qdrant_client.http import models as qmodels
-        
+
         qdrant_filters = [
             qmodels.FieldCondition(key="retraction_status", match=qmodels.MatchValue(value="not_retracted")),
             qmodels.FieldCondition(key="is_retrievable", match=qmodels.MatchValue(value=True))
@@ -272,177 +295,163 @@ class HybridRetriever:
                 key="study_type",
                 match=qmodels.MatchAny(any=filters["study_types"])
             ))
-            
-        if "year_from" in filters:
+
+        if filters.get("year_from"):
             qdrant_filters.append(qmodels.FieldCondition(
                 key="publication_year",
                 range=qmodels.Range(gte=int(filters["year_from"]))
             ))
 
-        should_filters = []
-        if clinical_intent:
-            if getattr(clinical_intent, "disease", None):
-                should_filters.append(qmodels.FieldCondition(
-                    key="disease",
-                    match=qmodels.MatchValue(value=clinical_intent.disease)
-                ))
-            if getattr(clinical_intent, "biomarker_status", None):
-                should_filters.append(qmodels.FieldCondition(
-                    key="biomarker",
-                    match=qmodels.MatchValue(value=clinical_intent.biomarker_status)
-                ))
-
-        filter_obj = qmodels.Filter(must=qdrant_filters, should=should_filters if should_filters else None)
-
-        loop = asyncio.get_running_loop()
+        filter_obj = qmodels.Filter(must=qdrant_filters)
         fetch_limit = max(100, limit * 2)
-        
+        client = self.qdrant_client.client
+
         def run_dense_search():
-            client = self.qdrant_client.client
-            if hasattr(client, "query_points"):
-                return client.query_points(
-                    collection_name=collection_name,
-                    query=dense,
-                    using="dense",
-                    query_filter=filter_obj,
-                    limit=fetch_limit,
-                    timeout=30
-                ).points
-            else:
-                return client.search(
-                    collection_name=collection_name,
-                    query_vector=("dense", dense),
-                    query_filter=filter_obj,
-                    limit=fetch_limit
-                )
+            return client.query_points(
+                collection_name=collection_name,
+                query=dense,
+                using="dense",
+                query_filter=filter_obj,
+                limit=fetch_limit,
+                with_payload=["chunk_id"],
+                timeout=30,
+            ).points
 
         def run_sparse_search():
-            client = self.qdrant_client.client
-            if hasattr(client, "query_points"):
-                return client.query_points(
-                    collection_name=collection_name,
-                    query=qmodels.SparseVector(indices=sparse["indices"], values=sparse["values"]),
-                    using="sparse",
-                    query_filter=filter_obj,
-                    limit=fetch_limit,
-                    timeout=30
-                ).points
-            else:
-                return client.search(
-                    collection_name=collection_name,
-                    query_vector=("sparse", qmodels.SparseVector(indices=sparse["indices"], values=sparse["values"])),
-                    query_filter=filter_obj,
-                    limit=fetch_limit
-                )
+            return client.query_points(
+                collection_name=collection_name,
+                query=qmodels.SparseVector(indices=sparse["indices"], values=sparse["values"]),
+                using="sparse",
+                query_filter=filter_obj,
+                limit=fetch_limit,
+                with_payload=["chunk_id"],
+                timeout=30,
+            ).points
 
-        # Run dense and sparse independently — if sparse times out, proceed with dense only
+        async def _safe(fn, label):
+            try:
+                return await asyncio.to_thread(fn)
+            except Exception as e:  # one channel failing must not kill the query
+                logger.warning("%s search failed: %s", label, e)
+                return []
+
+        # Dense and sparse channels run concurrently.
         t0 = time.perf_counter()
-        dense_hits = []
-        sparse_hits = []
-        try:
-            dense_hits = await loop.run_in_executor(None, run_dense_search)
-            logger.info(f"Dense search returned {len(dense_hits)} hits.")
-        except Exception as e:
-            logger.warning(f"Dense search failed: {e}")
-
-        try:
-            sparse_hits = await loop.run_in_executor(None, run_sparse_search)
-            logger.info(f"Sparse search returned {len(sparse_hits)} hits.")
-        except Exception as e:
-            logger.warning(f"Sparse search failed (proceeding with dense only): {e}")
-            
-        unfiltered_retrieval_flag = False
-        if (len(dense_hits) + len(sparse_hits)) < 5 and should_filters:
-            logger.info("[Retrieval] Fewer than 5 results with clinical intent filters. Retrying without 'should' filters.")
-            filter_obj = qmodels.Filter(must=qdrant_filters)
-            unfiltered_retrieval_flag = True
-            try:
-                dense_hits = await loop.run_in_executor(None, run_dense_search)
-            except Exception:
-                pass
-            try:
-                sparse_hits = await loop.run_in_executor(None, run_sparse_search)
-            except Exception:
-                pass
-
+        dense_task = _safe(run_dense_search, "Dense") if mode in ("dense", "hybrid") else asyncio.sleep(0, result=[])
+        sparse_task = _safe(run_sparse_search, "Sparse") if mode in ("sparse", "hybrid") else asyncio.sleep(0, result=[])
+        dense_hits, sparse_hits = await asyncio.gather(dense_task, sparse_task)
         t_search = time.perf_counter() - t0
 
         if not dense_hits and not sparse_hits:
             logger.warning(
-                "[Retrieval] Qdrant returned 0 hits (search took %.4fs). "
-                "Falling back to SQL retrieval.",
+                "[Retrieval] Qdrant returned 0 hits (search took %.4fs). Falling back to SQL retrieval.",
                 t_search,
             )
-            t0 = time.perf_counter()
             cands = self._mock_local_retrieval(search_query_text, filters, limit, clinical_intent)
-            t_sql = time.perf_counter() - t0
-            logger.info(
-                "[Retrieval] SQL fallback complete: %d candidates in %.4fs",
-                len(cands), t_sql,
-            )
             debug = RetrievalDebugInfo(
                 raw_query=query,
                 normalized_query=norm_res.normalized_query,
                 rewritten_query=search_query_text,
                 expanded_terms=norm_res.expanded_terms,
-                dense_vector_dim=len(dense) if 'dense' in locals() else 0,
-                sparse_term_count=len(sparse.get("indices", [])) if 'sparse' in locals() else 0,
+                dense_vector_dim=len(dense),
+                sparse_term_count=len(sparse.get("indices", [])),
                 pre_rerank_candidates=[{"chunk_id": c.chunk_id, "score": c.score, "pmcid": c.pmcid} for c in cands],
                 clinical_intent=clinical_intent
             )
             return cands, debug
 
-        # 5. Extract candidate IDs and fuse via RRF
+        # 5. Fuse rankings. In single-channel modes the RRF score reduces to
+        #    1/(k+rank) of that channel, so ordering is preserved.
         t0 = time.perf_counter()
-        dense_ids = [hit.payload["chunk_id"] for hit in dense_hits if hit.payload]
-        sparse_ids = [hit.payload["chunk_id"] for hit in sparse_hits if hit.payload]
+        point_id_by_chunk: dict[str, Any] = {}
+        dense_ids: list[str] = []
+        sparse_ids: list[str] = []
+        for hit in dense_hits:
+            if hit.payload and hit.payload.get("chunk_id"):
+                dense_ids.append(hit.payload["chunk_id"])
+                point_id_by_chunk[hit.payload["chunk_id"]] = hit.id
+        for hit in sparse_hits:
+            if hit.payload and hit.payload.get("chunk_id"):
+                sparse_ids.append(hit.payload["chunk_id"])
+                point_id_by_chunk.setdefault(hit.payload["chunk_id"], hit.id)
+        dense_rank = {cid: i + 1 for i, cid in enumerate(dense_ids)}
+        sparse_rank = {cid: i + 1 for i, cid in enumerate(sparse_ids)}
 
         rrf_ranked = self._apply_rrf(dense_ids, sparse_ids)[:limit]
         t_fusion = time.perf_counter() - t0
 
-        # 6. Hydrate metadata from SQLite DB
+        # 6. Fetch stored dense vectors for the fused top-k in ONE call, so the
+        #    context assembler can run MMR without re-embedding every passage.
+        top_chunk_ids = [cid for cid, _ in rrf_ranked]
+        vectors_by_chunk: dict[str, list[float]] = {}
+        try:
+            pts = await asyncio.to_thread(
+                client.retrieve,
+                collection_name=collection_name,
+                ids=[point_id_by_chunk[c] for c in top_chunk_ids if c in point_id_by_chunk],
+                with_vectors=["dense"],
+                with_payload=["chunk_id"],
+            )
+            for p in pts:
+                vec = p.vector.get("dense") if isinstance(p.vector, dict) else p.vector
+                if p.payload and vec is not None:
+                    vectors_by_chunk[p.payload["chunk_id"]] = list(vec)
+        except Exception as e:
+            logger.warning("[Retrieval] Could not fetch stored vectors (MMR will re-embed): %s", e)
+
+        # 7. Hydrate metadata with a single batched SQL join (was ~5 queries/candidate).
         t0 = time.perf_counter()
+        rows = (
+            self.db.query(Chunk, DocumentSection, DocumentRevision, SourceDocument)
+            .join(EvidenceUnit, Chunk.evidence_unit_id == EvidenceUnit.id)
+            .join(DocumentSection, EvidenceUnit.section_id == DocumentSection.id)
+            .join(DocumentRevision, DocumentSection.revision_id == DocumentRevision.id)
+            .join(SourceDocument, DocumentRevision.document_id == SourceDocument.id)
+            .filter(Chunk.id.in_(top_chunk_ids))
+            .all()
+        ) if top_chunk_ids else []
+        by_id = {r[0].id: r for r in rows}
+
         candidates = []
         pre_rerank_debug_list = []
-
         for rank, (chunk_id, rrf_score) in enumerate(rrf_ranked, start=1):
-            c = self.db.query(Chunk).filter_by(id=chunk_id).first()
-            if not c:
+            row = by_id.get(chunk_id)
+            if not row:
                 continue
-
-            eu = self.db.query(EvidenceUnit).filter_by(id=c.evidence_unit_id).first()
-            sec = self.db.query(DocumentSection).filter_by(id=eu.section_id).first() if eu else None
-            rev = self.db.query(DocumentRevision).filter_by(id=sec.revision_id).first() if sec else None
-            doc = self.db.query(SourceDocument).filter_by(id=rev.document_id).first() if rev else None
-
-            if doc:
-                cand = RetrievalCandidate(
-                    chunk_id=c.id,
-                    qdrant_point_id=c.qdrant_point_id or "",
-                    text=c.text,
-                    score=rrf_score,
-                    document_id=doc.id,
-                    pmcid=doc.pmcid,
-                    study_type=rev.study_type,
-                    publication_date=doc.publication_date,
-                    display_rights=doc.display_rights,
-                    unfiltered_retrieval=unfiltered_retrieval_flag
-                )
-                candidates.append(cand)
-                pre_rerank_debug_list.append({
-                    "chunk_id": c.id,
-                    "rank": rank,
-                    "pmcid": doc.pmcid,
-                    "title": doc.title,
-                    "study_type": rev.study_type,
-                    "publication_date": doc.publication_date,
-                    "fusion_score": round(rrf_score, 5),
-                    "section": sec.section_kind if sec else "Unknown"
-                })
+            c, sec, rev, doc = row
+            cand = RetrievalCandidate(
+                chunk_id=c.id,
+                qdrant_point_id=c.qdrant_point_id or "",
+                text=c.text,
+                score=rrf_score,
+                document_id=doc.id,
+                pmcid=doc.pmcid,
+                study_type=rev.study_type,
+                publication_date=doc.publication_date,
+                display_rights=doc.display_rights,
+                title=doc.title or "",
+                section=sec.section_kind or "",
+                dense_vector=vectors_by_chunk.get(chunk_id),
+                dense_rank=dense_rank.get(chunk_id),
+                sparse_rank=sparse_rank.get(chunk_id),
+            )
+            candidates.append(cand)
+            pre_rerank_debug_list.append({
+                "chunk_id": c.id,
+                "rank": rank,
+                "pmcid": doc.pmcid,
+                "title": doc.title,
+                "study_type": rev.study_type,
+                "publication_date": doc.publication_date,
+                "fusion_score": round(rrf_score, 5),
+                "dense_rank": dense_rank.get(chunk_id),
+                "sparse_rank": sparse_rank.get(chunk_id),
+                "section": sec.section_kind if sec else "Unknown"
+            })
         t_hydrate = time.perf_counter() - t0
         logger.info(
-            "[Retrieval] Search: %.4fs | Fusion: %.4fs | Hydration: %.4fs | Candidates: %d",
-            t_search, t_fusion, t_hydrate, len(candidates),
+            "[Retrieval] mode=%s | Search: %.4fs | Fusion: %.4fs | Hydration: %.4fs | Candidates: %d",
+            mode, t_search, t_fusion, t_hydrate, len(candidates),
         )
 
         debug = RetrievalDebugInfo(
@@ -463,7 +472,8 @@ class HybridRetriever:
         query: str,
         filters: dict[str, Any] | None = None,
         limit: int = 50,
-        clinical_intent: ClinicalQueryIntent | None = None
+        clinical_intent: ClinicalQueryIntent | None = None,
+        mode: str = "hybrid",
     ) -> list[RetrievalCandidate]:
-        candidates, _ = await self.retrieve_with_debug(query, filters, limit, clinical_intent)
+        candidates, _ = await self.retrieve_with_debug(query, filters, limit, clinical_intent, mode=mode)
         return candidates
