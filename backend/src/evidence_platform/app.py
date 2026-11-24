@@ -346,6 +346,7 @@ def persist_and_build_response(db: Session, user: User, result: PipelineResult, 
         verification_summary={
             "failed_nums_count": sum(1 for c in final_claims if not c.get("numeric_validation_passed", True)),
             "llm_error": synth_res.llm_error if synth_res else None,
+        "safety_gate": result.safety_gate,
         },
     ))
 
@@ -406,6 +407,7 @@ def persist_and_build_response(db: Session, user: User, result: PipelineResult, 
         "limitations_claims": [] if abstained or not synth_res else synth_res.limitations,
         "abstention_reason": abstention_reason,
         "llm_error": synth_res.llm_error if synth_res else None,
+        "safety_gate": result.safety_gate,
         "model_versions": models,
         "_debug": {
             "timings": timings,
@@ -467,7 +469,7 @@ async def case_search(payload: dict[str, Any], user: User = Depends(get_current_
     # Baseline: the same question WITHOUT patient context (retrieval + ranking only).
     general = await pipeline.run(question, filters, PipelineOptions(run_synthesis=False))
     # Case-aware run: patient facts expand the query and set population constraints.
-    case = await pipeline.run(case_query, filters, PipelineOptions(intent_override=case_intent))
+    case = await pipeline.run(case_query, filters, PipelineOptions(intent_override=case_intent, entity_check_text=question))
     response = persist_and_build_response(db, user, case, t_request)
 
     ev_ids = {c.chunk_id: f"E{i + 1:02d}" for i, c in enumerate(case.assembled.selected_candidates)} if case.assembled else {}

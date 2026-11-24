@@ -160,3 +160,19 @@ def test_abstention_uses_one_batched_nli_call():
     status, out, _ = asyncio.run(layer.verify_and_calibrate("answer", claims, ev))
     assert nli.calls == 1
     assert status == "answer" and all(c["entailment_status"] == "entailment" for c in out)
+
+
+# ---- Pre-generation safety gates -------------------------------------------------
+
+def test_scope_and_entity_gates():
+    from evidence_platform.modules.pipeline.query_pipeline import out_of_scope, unknown_entities
+    from evidence_platform.modules.clinical.clinical_intent import ClinicalIntentExtractor
+    ex = ClinicalIntentExtractor()
+    for q in ["What is the capital of France?", "Write a poem about the ocean", "Best gaming laptop under 1000 dollars?"]:
+        assert out_of_scope(q, ex.extract_intent(q)), q
+    for q in ["Is cetuximab beneficial in RAS wild-type colorectal cancer?", "Does adjuvant radiotherapy reduce recurrence?",
+              "What is the toxicity of sotorasib?"]:
+        assert not out_of_scope(q, ex.extract_intent(q)), q
+    passages = [_cand("a", "P1", "Trastuzumab deruxtecan improved PFS in HER2-positive breast cancer.")]
+    assert unknown_entities("Is zorvatinib effective in HER2-positive breast cancer?", passages) == ["zorvatinib"]
+    assert unknown_entities("Is trastuzumab effective in HER2-positive breast cancer?", passages) == []

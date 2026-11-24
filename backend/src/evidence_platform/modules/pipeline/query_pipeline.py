@@ -40,6 +40,8 @@ from ..synthesis.contradiction_checker import ContradictionChecker
 from ..synthesis.citation_auditor import CitationAuditor
 from ..synthesis.effect_map import build_evidence_map
 from ..synthesis.certainty import assess_certainty
+from ..clinical.phi_guard import scan_phi
+import re
 from ..clinical.clinical_intent import ClinicalIntentExtractor, ClinicalQueryIntent
 from ..clinical.population_matcher import PopulationMatchEvaluator
 from ..clinical.evidence_hierarchy import EvidenceHierarchyRanker
@@ -57,6 +59,9 @@ class PipelineOptions:
     run_synthesis: bool = True
     # Optional pre-built intent (Case Mode builds it from confirmed patient facts).
     intent_override: ClinicalQueryIntent | None = None
+    # Text whose drug names must appear in the evidence (Case Mode passes the
+    # clinician's question, not the patient's prior-therapy context).
+    entity_check_text: str | None = None
 
 
 @dataclass
@@ -83,6 +88,7 @@ class PipelineResult:
     debug_info: Any = None
     evidence_map: dict[str, Any] = field(default_factory=dict)
     certainty: dict[str, Any] = field(default_factory=dict)
+    safety_gate: str | None = None   # phi | out_of_scope | low_relevance | unknown_entity
 
 
 class QueryPipeline:
@@ -122,6 +128,26 @@ class QueryPipeline:
         t0 = time.perf_counter()
         intent = options.intent_override or self.intent_extractor.extract_intent(query)
         _tick("intent_extraction_s", t0)
+
+        def _gate(kind: str, reason: str, raw: list | None = None, dbg: Any = None) -> PipelineResult:
+            res = PipelineResult(query=query, filters=filters, options=options, intent=intent,
+                                 raw_candidates=raw or [], ranked_candidates=list(raw or []),
+                                 timings=timings, candidate_counts=counts, debug_info=dbg)
+            res.final_status, res.abstention_reason, res.safety_gate = "insufficient_evidence", reason, kind
+            timings["total_e2e_s"] = round(time.perf_counter() - t_wall, 4)
+            logger.info("Safety gate '%s' fired: %s", kind, reason)
+            return res
+
+        # Gate 1: identifiable patient data never leaves the machine.
+        phi = scan_phi(query)
+        if phi["blocked"]:
+            return _gate("phi", "The question appears to contain patient identifiers ("
+                         + ", ".join(sorted({f['kind'] for f in phi['findings']}))
+                         + "). It was blocked locally before any model call; please remove them.")
+        # Gate 2: out-of-scope (no clinical entity or vocabulary at all).
+        if options.retrieval_mode == "full" and out_of_scope(query, intent):
+            return _gate("out_of_scope", "This question is outside Indence's scope (clinical evidence from the "
+                         "oncology literature), so no answer is generated.")
 
         # 2. Retrieval
         channel = options.retrieval_mode if options.retrieval_mode in ("sparse", "dense", "hybrid") else "hybrid"
@@ -172,6 +198,22 @@ class QueryPipeline:
         counts["post_assembly"] = len(assembled.selected_candidates)
         result.assembled = assembled
         result.ranked_candidates = list(assembled.ranked_candidates) or list(assembled.selected_candidates)
+
+        # Gate 3: evidence relevance and entity coverage (before any LLM call).
+        if options.run_synthesis:
+            strong = sum(1 for c in assembled.selected_candidates if (c.rerank_score or 0) >= RELEVANCE_MIN)
+            missing = unknown_entities(options.entity_check_text or query, raw_candidates)
+            if missing:
+                g = _gate("unknown_entity", "No retrieved evidence mentions " + ", ".join(missing)
+                          + ". Indence does not answer about treatments it has no evidence for.", raw_candidates, debug_info)
+                g.assembled, g.ranked_candidates = assembled, result.ranked_candidates
+                return g
+            if strong < MIN_RELEVANT_PASSAGES:
+                g = _gate("low_relevance", f"Only {strong} retrieved passage(s) are strongly relevant to the question "
+                          f"(cross-encoder ≥ {RELEVANCE_MIN}); at least {MIN_RELEVANT_PASSAGES} are required to answer.",
+                          raw_candidates, debug_info)
+                g.assembled, g.ranked_candidates = assembled, result.ranked_candidates
+                return g
 
         # 6. Grouping
         t0 = time.perf_counter()
@@ -250,6 +292,35 @@ class QueryPipeline:
         logger.info("Pipeline complete: status=%s | %d claims | %.2fs wall",
                     final_status, len(final_claims), timings["total_e2e_s"])
         return result
+
+
+# ----------------------------------------------------------------------------
+# Pre-generation safety gates (deterministic; no LLM call is made when one fires)
+# ----------------------------------------------------------------------------
+MEDICAL_VOCAB = re.compile(
+    r"cancer|tumou?r|carcinoma|sarcoma|lymphoma|leuk|melanoma|metasta|oncolog|neoplas|malignan|chemo|radiother|"
+    r"immunother|therap|treat|drug|dose|trial|surviv|mortality|recurr|remission|response rate|patient|clinical|"
+    r"biomarker|mutation|her2|egfr|alk|kras|brca|pd-?l1|msi|hazard ratio|placebo|adjuvant|surgery|resection|"
+    r"toxicit|adverse|guideline|prognos|diagnos|screening|staging|stage\s+[iv1-4]", re.I)
+DRUG_TOKEN = re.compile(
+    r"\b[a-z]{3,}(?:tinib|inib|zumab|ximab|mumab|umab|ciclib|parib|lisib|tecan|platin|rafenib|metinib|degib|sertib|"
+    r"clax|zomib|lutamide|terone|rasib|tansine|taxel|rubicin|citabine|fosfamide|trexate|mustine|limus)\b", re.I)
+RELEVANCE_MIN = 0.30     # cross-encoder probability; need >= 2 passages above it
+MIN_RELEVANT_PASSAGES = 2
+
+
+def out_of_scope(query: str, intent: ClinicalQueryIntent) -> bool:
+    has_entities = any([intent.disease, intent.biomarker_status, intent.treatment, intent.clinical_outcome])
+    return not has_entities and not MEDICAL_VOCAB.search(query) and not DRUG_TOKEN.search(query)
+
+
+def unknown_entities(query: str, candidates: list[Any]) -> list[str]:
+    """Drug names in the question that occur in NONE of the retrieved passages/titles."""
+    drugs = {m.group(0).lower() for m in DRUG_TOKEN.finditer(query)}
+    if not drugs:
+        return []
+    corpus = " ".join(((getattr(c, "title", "") or "") + " " + (c.text or "")).lower() for c in candidates)
+    return sorted(d for d in drugs if d not in corpus)
 
 
 def pmc_url(pmcid: str | None) -> str | None:
