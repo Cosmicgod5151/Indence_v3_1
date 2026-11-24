@@ -26,6 +26,9 @@ from .adapters.models.factory import (
 )
 from .adapters.qdrant.qdrant_client import QdrantIndexClient
 from .modules.pipeline.query_pipeline import QueryPipeline, PipelineOptions, PipelineResult, evidence_sources
+from .modules.clinical.phi_guard import scan_phi
+from .modules.clinical.case_context import extract_case_facts, build_case_query, missing_data, detect_disease, CaseFact
+from .modules.clinical.applicability import build_applicability_matrix
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -417,6 +420,88 @@ def persist_and_build_response(db: Session, user: User, result: PipelineResult, 
             "excluded_count": len(result.excluded_audit_entries),
         },
     }
+
+
+# PATIENT CASE MODE ROUTES
+@app.post("/api/v1/case/extract", dependencies=[Depends(verify_csrf_token)])
+async def case_extract(payload: dict[str, Any], user: User = Depends(get_current_user)):
+    """PHI guard (local) -> source-anchored fact extraction -> verification."""
+    if not rate_limiter.is_allowed(f"case_extract:{user.id}", limit=15, window_seconds=60):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded.")
+    text = (payload.get("text") or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Case text is required")
+    if len(text) > 12000:
+        raise HTTPException(status_code=400, detail="Case text is limited to 12,000 characters")
+    phi = scan_phi(text)
+    if phi["blocked"]:
+        return {"phi": phi, "facts": [], "dropped_facts": [], "conflicts": [], "missing_data": [],
+                "disease": None, "extraction_method": None, "traceability": None}
+    t0 = time.perf_counter()
+    result = await extract_case_facts(text, get_llm_client())
+    result["phi"] = phi
+    result["latency_s"] = round(time.perf_counter() - t0, 2)
+    return result
+
+
+@app.post("/api/v1/case/search", dependencies=[Depends(verify_csrf_token)])
+async def case_search(payload: dict[str, Any], user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Case-aware evidence search with a general-search baseline and Applicability Matrix."""
+    if not rate_limiter.is_allowed(f"user_search:{user.id}", limit=30, window_seconds=60):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded.")
+    question = (payload.get("question") or "").strip()
+    facts = [f for f in (payload.get("facts") or []) if isinstance(f, dict) and f.get("value")]
+    filters = payload.get("filters", {}) or {}
+    if not question:
+        raise HTTPException(status_code=400, detail="A clinical question is required")
+    if not facts:
+        raise HTTPException(status_code=400, detail="Confirm at least one patient fact")
+    phi = scan_phi(question + "\n" + "\n".join(str(f.get("value")) for f in facts))
+    if phi["blocked"]:
+        raise HTTPException(status_code=400, detail="Possible identifiers in question/facts: " +
+                            ", ".join(f["kind"] for f in phi["findings"]))
+
+    t_request = time.perf_counter()
+    case_query, case_intent = build_case_query(question, facts)
+    pipeline = build_pipeline(db)
+    # Baseline: the same question WITHOUT patient context (retrieval + ranking only).
+    general = await pipeline.run(question, filters, PipelineOptions(run_synthesis=False))
+    # Case-aware run: patient facts expand the query and set population constraints.
+    case = await pipeline.run(case_query, filters, PipelineOptions(intent_override=case_intent))
+    response = persist_and_build_response(db, user, case, t_request)
+
+    ev_ids = {c.chunk_id: f"E{i + 1:02d}" for i, c in enumerate(case.assembled.selected_candidates)} if case.assembled else {}
+    case_pool = list(case.assembled.selected_candidates) + list(case.ranked_candidates) if case.assembled else list(case.ranked_candidates)
+    general_pool = list(general.assembled.selected_candidates) + list(general.ranked_candidates) if general.assembled else list(general.ranked_candidates)
+    case_matrix = build_applicability_matrix(case_pool, facts, ev_ids, limit=8)
+    general_matrix = build_applicability_matrix(general_pool, facts, {}, limit=8)
+    case_ids = {r["pmcid"] for r in case_matrix["rows"]}
+    general_ids = {r["pmcid"] for r in general_matrix["rows"]}
+    fact_text = " ".join(f"{f.get('name') or ''} {f.get('value')}" for f in facts)
+    disease = detect_disease([CaseFact(field=f.get("field", ""), value=str(f.get("value"))) for f in facts], fact_text)
+    response["case_mode"] = {
+        "case_query": case_query,
+        "case_intent": case_intent.to_dict(),
+        "applicability": case_matrix,
+        "general_baseline": {
+            "query": question,
+            "applicability": general_matrix,
+            "sources": [{"pmcid": r["pmcid"], "title": r["title"], "year": r["year"], "verdict": r["verdict"],
+                         "score": r["score"]} for r in general_matrix["rows"]],
+        },
+        "comparison": {
+            "case_mean_applicability": case_matrix["mean_applicability"],
+            "general_mean_applicability": general_matrix["mean_applicability"],
+            "shared_studies": len(case_ids & general_ids),
+            "only_in_case_aware": len(case_ids - general_ids),
+            "only_in_general": len(general_ids - case_ids),
+            "note": "The general search is kept alongside the case-aware search so that personalisation cannot "
+                    "silently hide evidence (anti-confirmation-bias control from the Milestone-1 design).",
+        },
+        "missing_data": missing_data(disease, [], fact_text),
+        "confirmed_facts": facts,
+    }
+    return response
 
 
 # AUDIT TRACE LOOKUP ROUTE

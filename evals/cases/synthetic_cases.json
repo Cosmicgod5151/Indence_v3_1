@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "description": "SYNTHETIC, fully fictional, de-identified oncology case summaries written for the Indence capstone. They describe no real patient. Used for the Case Mode demo and for fact-extraction evaluation (gold facts hand-labelled by the author). A gold fact is matched when an extracted fact has the same field and its value contains every token in 'must_contain' (case-insensitive).",
+  "cases": [
+    {
+      "id": "case_01_nsclc_egfr",
+      "disease": "Non-Small Cell Lung Cancer",
+      "question": "What first-line systemic treatment has the strongest survival evidence for this patient?",
+      "text": "62-year-old woman, never smoker. Biopsy of right upper lobe mass: lung adenocarcinoma. Staging PET-CT and MRI brain: stage IVB with multiple liver metastases and two asymptomatic brain metastases (largest 8 mm). Tissue NGS: EGFR exon 19 deletion detected; ALK rearrangement negative; ROS1 fusion negative. PD-L1 (22C3) TPS 10%. ECOG performance status 1. No prior systemic therapy. Creatinine 0.9 mg/dL, bilirubin 0.6 mg/dL. Comorbidity: well-controlled hypothyroidism on levothyroxine.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["adenocarcinoma"]},
+        {"field": "stage", "must_contain": ["iv"]},
+        {"field": "metastatic_site", "must_contain": ["liver"]},
+        {"field": "metastatic_site", "must_contain": ["brain"]},
+        {"field": "biomarker", "must_contain": ["egfr", "19"]},
+        {"field": "biomarker", "must_contain": ["alk", "negative"]},
+        {"field": "biomarker", "must_contain": ["ros1", "negative"]},
+        {"field": "biomarker", "must_contain": ["pd-l1", "10"]},
+        {"field": "performance_status", "must_contain": ["1"]},
+        {"field": "lab", "must_contain": ["creatinine", "0.9"]},
+        {"field": "lab", "must_contain": ["bilirubin", "0.6"]},
+        {"field": "comorbidity", "must_contain": ["hypothyroidism"]},
+        {"field": "age", "must_contain": ["62"]}
+      ]
+    },
+    {
+      "id": "case_02_nsclc_pdl1_conflict",
+      "disease": "Non-Small Cell Lung Cancer",
+      "question": "Is first-line pembrolizumab monotherapy supported by evidence for this patient?",
+      "text": "68-year-old man, former smoker (40 pack-years). Diagnosis: stage IV non-small cell lung cancer, squamous histology, with adrenal and bone metastases. Molecular testing: EGFR wild-type, ALK negative, KRAS G12C mutation. PD-L1 22C3 on initial biopsy (01/2026): TPS 80%. Repeat PD-L1 on the adrenal biopsy (03/2026): TPS 45%. ECOG 0. Treatment-naive. eGFR 72 mL/min. History of type 2 diabetes on metformin.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["non-small cell lung cancer"]},
+        {"field": "histology", "must_contain": ["squamous"]},
+        {"field": "stage", "must_contain": ["iv"]},
+        {"field": "biomarker", "must_contain": ["egfr", "wild"]},
+        {"field": "biomarker", "must_contain": ["alk", "negative"]},
+        {"field": "biomarker", "must_contain": ["kras", "g12c"]},
+        {"field": "biomarker", "must_contain": ["80"]},
+        {"field": "biomarker", "must_contain": ["45"]},
+        {"field": "performance_status", "must_contain": ["0"]},
+        {"field": "lab", "must_contain": ["72"]},
+        {"field": "comorbidity", "must_contain": ["diabetes"]},
+        {"field": "medication", "must_contain": ["metformin"]}
+      ],
+      "expected_conflict": "PD-L1"
+    },
+    {
+      "id": "case_03_breast_her2_pos",
+      "disease": "Breast Cancer",
+      "question": "What is the best-supported second-line HER2-targeted treatment after progression?",
+      "text": "54-year-old woman with metastatic breast cancer. Invasive ductal carcinoma, ER negative, PR negative, HER2 positive (IHC 3+). Metastases to liver and lungs. First-line treatment with trastuzumab, pertuzumab and docetaxel for 14 months; now progressive disease in the liver. No brain metastases on MRI. ECOG 1. LVEF 58%. ALT 48 U/L.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["breast"]},
+        {"field": "histology", "must_contain": ["ductal"]},
+        {"field": "stage", "must_contain": ["metastatic"]},
+        {"field": "biomarker", "must_contain": ["er", "negative"]},
+        {"field": "biomarker", "must_contain": ["pr", "negative"]},
+        {"field": "biomarker", "must_contain": ["her2", "3+"]},
+        {"field": "metastatic_site", "must_contain": ["liver"]},
+        {"field": "prior_therapy", "must_contain": ["trastuzumab", "pertuzumab"]},
+        {"field": "performance_status", "must_contain": ["1"]},
+        {"field": "lab", "must_contain": ["58"]},
+        {"field": "lab", "must_contain": ["48"]},
+        {"field": "age", "must_contain": ["54"]}
+      ]
+    },
+    {
+      "id": "case_04_breast_hr_pos_post_cdk",
+      "disease": "Breast Cancer",
+      "question": "What are the evidence-based options after progression on a CDK4/6 inhibitor?",
+      "text": "71-year-old postmenopausal woman. Hormone receptor-positive breast cancer (ER 90%, PR 20%), HER2-low (IHC 1+), with bone-only metastases. Progressed after 22 months of letrozole plus palbociclib. ESR1 mutation detected on ctDNA. PIK3CA status not tested. ECOG 1. Creatinine 1.2 mg/dL. Osteoporosis on denosumab.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["breast"]},
+        {"field": "biomarker", "must_contain": ["er", "90"]},
+        {"field": "biomarker", "must_contain": ["pr", "20"]},
+        {"field": "biomarker", "must_contain": ["her2", "1+"]},
+        {"field": "biomarker", "must_contain": ["esr1"]},
+        {"field": "metastatic_site", "must_contain": ["bone"]},
+        {"field": "prior_therapy", "must_contain": ["letrozole", "palbociclib"]},
+        {"field": "performance_status", "must_contain": ["1"]},
+        {"field": "lab", "must_contain": ["creatinine", "1.2"]},
+        {"field": "comorbidity", "must_contain": ["osteoporosis"]},
+        {"field": "medication", "must_contain": ["denosumab"]},
+        {"field": "age", "must_contain": ["71"]}
+      ]
+    },
+    {
+      "id": "case_05_crc_left_ras_wt",
+      "disease": "Colorectal Cancer",
+      "question": "Should an anti-EGFR antibody be added to first-line chemotherapy?",
+      "text": "59-year-old man with adenocarcinoma of the sigmoid colon (left-sided) and synchronous unresectable liver metastases. Extended RAS testing: KRAS and NRAS wild-type. BRAF V600E not detected. Microsatellite stable (MSS), pMMR. No prior chemotherapy. ECOG 0. Bilirubin 0.8 mg/dL, platelets 260 x10^9/L.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["adenocarcinoma"]},
+        {"field": "metastatic_site", "must_contain": ["liver"]},
+        {"field": "biomarker", "must_contain": ["kras"]},
+        {"field": "biomarker", "must_contain": ["braf"]},
+        {"field": "biomarker", "must_contain": ["mss"]},
+        {"field": "performance_status", "must_contain": ["0"]},
+        {"field": "lab", "must_contain": ["bilirubin", "0.8"]},
+        {"field": "lab", "must_contain": ["260"]},
+        {"field": "age", "must_contain": ["59"]}
+      ]
+    },
+    {
+      "id": "case_06_crc_msi_high",
+      "disease": "Colorectal Cancer",
+      "question": "Is first-line immunotherapy better than chemotherapy for this patient?",
+      "text": "47-year-old woman with right-sided (ascending colon) adenocarcinoma, metastatic to peritoneum and liver. Immunohistochemistry shows loss of MLH1 and PMS2: mismatch repair deficient (dMMR), MSI-high. KRAS wild-type, BRAF V600E mutation present. No prior systemic therapy. ECOG 1. Haemoglobin 10.4 g/dL.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["adenocarcinoma"]},
+        {"field": "metastatic_site", "must_contain": ["peritoneum"]},
+        {"field": "metastatic_site", "must_contain": ["liver"]},
+        {"field": "biomarker", "must_contain": ["msi"]},
+        {"field": "biomarker", "must_contain": ["kras", "wild"]},
+        {"field": "biomarker", "must_contain": ["braf", "v600e"]},
+        {"field": "performance_status", "must_contain": ["1"]},
+        {"field": "lab", "must_contain": ["10.4"]},
+        {"field": "age", "must_contain": ["47"]}
+      ]
+    },
+    {
+      "id": "case_07_ovarian_brca",
+      "disease": "Ovarian Cancer",
+      "question": "Does PARP inhibitor maintenance improve survival for this patient?",
+      "text": "56-year-old woman with high-grade serous ovarian carcinoma, FIGO stage IIIC. Germline BRCA1 pathogenic mutation. Underwent interval debulking surgery with no residual disease, followed by carboplatin and paclitaxel for six cycles with complete response. CA-125 normalised to 12 U/mL. ECOG 0.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["ovarian"]},
+        {"field": "histology", "must_contain": ["serous"]},
+        {"field": "stage", "must_contain": ["iiic"]},
+        {"field": "biomarker", "must_contain": ["brca1"]},
+        {"field": "prior_therapy", "must_contain": ["carboplatin", "paclitaxel"]},
+        {"field": "lab", "must_contain": ["12"]},
+        {"field": "performance_status", "must_contain": ["0"]},
+        {"field": "age", "must_contain": ["56"]}
+      ]
+    },
+    {
+      "id": "case_08_prostate_mcspc",
+      "disease": "Prostate Cancer",
+      "question": "Does adding an androgen receptor pathway inhibitor to ADT improve overall survival?",
+      "text": "66-year-old man with newly diagnosed metastatic castration-sensitive prostate adenocarcinoma, Gleason score 4+5=9, with high-volume bone metastases (more than 10 lesions including spine and pelvis). PSA 85 ng/mL at diagnosis. Started androgen deprivation therapy (degarelix) 3 weeks ago. ECOG 1. Creatinine 1.0 mg/dL. Hypertension on amlodipine.",
+      "gold_facts": [
+        {"field": "cancer_type", "must_contain": ["prostate"]},
+        {"field": "stage", "must_contain": ["metastatic"]},
+        {"field": "metastatic_site", "must_contain": ["bone"]},
+        {"field": "lab", "must_contain": ["psa", "85"]},
+        {"field": "prior_therapy", "must_contain": ["degarelix"]},
+        {"field": "performance_status", "must_contain": ["1"]},
+        {"field": "lab", "must_contain": ["creatinine", "1.0"]},
+        {"field": "comorbidity", "must_contain": ["hypertension"]},
+        {"field": "medication", "must_contain": ["amlodipine"]},
+        {"field": "age", "must_contain": ["66"]}
+      ]
+    }
+  ],
+  "phi_demo": {
+    "description": "Fictional identifiers used ONLY to demonstrate that the local PHI guard blocks the request before any cloud call.",
+    "text": "Patient name: Rakesh Verma, UHID: AIIMS2026/44871, phone 98765 43210. 61-year-old man with stage IV lung adenocarcinoma, EGFR exon 21 L858R mutation, ECOG 1."
+  }
+}

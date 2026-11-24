@@ -73,14 +73,14 @@ class ClinicalIntentExtractor:
 
     # Disease patterns
     DISEASE_PATTERNS = [
-        (r"\bbreast\s+cancer\b|\bbreast\s+carcinoma\b|\bmbc\b|\btnbc\b", "Breast Cancer"),
-        (r"\bnon-small\s+cell\s+lung\s+cancer\b|\bnsclc\b", "Non-Small Cell Lung Cancer"),
+        (r"\bbreast\s+cancer\b|\bbreast\s+carcinoma\b|\bmbc\b|\btnbc\b|\binvasive\s+(?:ductal|lobular)\s+carcinoma\b", "Breast Cancer"),
+        (r"\bnon-small[\s-]+cell\s+lung\s+(?:cancer|carcinoma)\b|\bnsclc\b|\blung\s+adenocarcinoma\b|\badenocarcinoma\s+of\s+the\s+lung\b|\blung\s+squamous\b|\bsquamous\s+cell\s+(?:lung\s+)?carcinoma\s+of\s+the\s+lung\b", "Non-Small Cell Lung Cancer"),
         (r"\bsmall\s+cell\s+lung\s+cancer\b|\bsclc\b", "Small Cell Lung Cancer"),
         (r"\blung\s+cancer\b|\blung\s+carcinoma\b", "Lung Cancer"),
-        (r"\bcolorectal\s+cancer\b|\bcrc\b|\bmcrc\b|\bcolon\s+cancer\b|\brectal\s+cancer\b", "Colorectal Cancer"),
-        (r"\bprostate\s+cancer\b|\bprostate\s+carcinoma\b", "Prostate Cancer"),
+        (r"\bcolorectal\s+(?:cancer|carcinoma|adenocarcinoma)\b|\bcrc\b|\bmcrc\b|\bcolon\s+cancer\b|\brectal\s+cancer\b|\b(?:sigmoid|ascending|descending|transverse)\s+colon\b|\bcolon\s+adenocarcinoma\b|\badenocarcinoma\s+of\s+the\s+(?:\w+\s+)?(?:colon|rectum)\b", "Colorectal Cancer"),
+        (r"\bprostate\s+(?:cancer|carcinoma|adenocarcinoma)\b|\bmcspc\b|\bmcrpc\b", "Prostate Cancer"),
         (r"\bcervical\s+cancer\b|\bcervical\s+carcinoma\b|\bcervix\s+cancer\b", "Cervical Cancer"),
-        (r"\bovarian\s+cancer\b|\bovarian\s+carcinoma\b", "Ovarian Cancer"),
+        (r"\bovarian\s+(?:cancer|carcinoma)\b|\bhigh-grade\s+serous\b", "Ovarian Cancer"),
         (r"\bmelanoma\b", "Melanoma"),
         (r"\bpancreatic\s+cancer\b|\bpancreatic\s+ductal\s+adenocarcinoma\b", "Pancreatic Cancer"),
         (r"\bhead\s+and\s+neck\b|\bhnscc\b", "Head and Neck Cancer"),
