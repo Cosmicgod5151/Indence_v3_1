@@ -5,7 +5,7 @@ import EvidenceMap from "./components/EvidenceMap";
 import CertaintyCard from "./components/CertaintyCard";
 import CaseMode from "./components/CaseMode";
 import ModelTrace from "./components/ModelTrace";
-import ClaimVerification from "./components/ClaimVerification";
+import ClaimVerification, { VerifyBadge, RemovedByVerification } from "./components/ClaimVerification";
 
 // Cookie helper to read CSRF token
 function getCookie(name) {
@@ -738,7 +738,7 @@ export default function Home() {
                           className="synth-section recommendation glass glass-interactive"
                           onClick={() => setActiveClaim({ text: results.synthesis.recommendation.text, sentence_ids: results.synthesis.recommendation.sentence_ids, evidence_ids: results.synthesis.recommendation.evidence_ids, aligned_spans: results.synthesis.recommendation.aligned_spans || [] })}
                         >
-                          <div className="synth-section-title">Recommendation</div>
+                          <div className="synth-section-title">Recommendation <VerifyBadge section={results.synthesis.recommendation} /></div>
                           <p className="synth-text">
                             {results.synthesis.recommendation.text}
                             {results.synthesis.recommendation.sentence_ids && results.synthesis.recommendation.sentence_ids.map((sid, s_idx) => (
@@ -753,7 +753,7 @@ export default function Home() {
                             style={{ opacity: 0.9 }}
                             onClick={() => setActiveClaim({ text: results.synthesis.clinical_reasoning.text, sentence_ids: results.synthesis.clinical_reasoning.sentence_ids, evidence_ids: results.synthesis.clinical_reasoning.evidence_ids, aligned_spans: results.synthesis.clinical_reasoning.aligned_spans || [] })}
                           >
-                            <div className="synth-section-title">Clinical Reasoning</div>
+                            <div className="synth-section-title">Clinical Reasoning <VerifyBadge section={results.synthesis.clinical_reasoning} /></div>
                             <p className="synth-text" style={{ fontSize: "0.95rem" }}>
                               {results.synthesis.clinical_reasoning.text}
                               {results.synthesis.clinical_reasoning.sentence_ids && results.synthesis.clinical_reasoning.sentence_ids.map((sid, s_idx) => (
@@ -773,6 +773,7 @@ export default function Home() {
                                 onClick={() => setActiveClaim({ text: ev.text, sentence_ids: ev.sentence_ids, evidence_ids: ev.evidence_ids, aligned_spans: ev.aligned_spans || [] })}
                               >
                                 <p className="synth-text" style={{ fontSize: "0.95rem" }}>
+                                  <VerifyBadge section={ev} />{" "}
                                   {ev.text}
                                   {ev.evidence_ids && ev.evidence_ids.map((eid, e_idx) => (
                                     renderCite(eid, e_idx)
@@ -788,7 +789,7 @@ export default function Home() {
                             className="synth-section alternatives glass glass-interactive"
                             onClick={() => setActiveClaim({ text: results.synthesis.alternatives.text, sentence_ids: results.synthesis.alternatives.sentence_ids, evidence_ids: results.synthesis.alternatives.evidence_ids, aligned_spans: results.synthesis.alternatives.aligned_spans || [] })}
                           >
-                            <div className="synth-section-title">Alternatives / Considerations</div>
+                            <div className="synth-section-title">Alternatives / Considerations <VerifyBadge section={results.synthesis.alternatives} /></div>
                             <p className="synth-text" style={{ fontSize: "0.95rem" }}>
                               {results.synthesis.alternatives.text}
                               {results.synthesis.alternatives.sentence_ids && results.synthesis.alternatives.sentence_ids.map((sid, s_idx) => (
@@ -804,13 +805,14 @@ export default function Home() {
                             style={{ padding: "1.25rem", borderRadius: "12px", cursor: "pointer" }}
                             onClick={() => setActiveClaim({ text: results.synthesis.bottom_line.text, sentence_ids: results.synthesis.bottom_line.sentence_ids, evidence_ids: results.synthesis.bottom_line.evidence_ids, aligned_spans: results.synthesis.bottom_line.aligned_spans || [] })}
                           >
-                            <div className="synth-section-title" style={{ color: "var(--accent-emerald)" }}>Bottom Line</div>
+                            <div className="synth-section-title" style={{ color: "var(--accent-emerald)" }}>Bottom Line <VerifyBadge section={results.synthesis.bottom_line} /></div>
                             <p className="synth-text" style={{ fontWeight: "500" }}>
                               {results.synthesis.bottom_line.text}
                               {(results.synthesis.bottom_line.evidence_ids || []).map((eid, e_idx) => renderCite(eid, `bl-${e_idx}`))}
                             </p>
                           </div>
                         )}
+                        <RemovedByVerification items={results.synthesis.removed_by_verification} />
                       </div>
                     ) : (
                       results.direct_answer_claims && results.direct_answer_claims.map((claim, idx) => {

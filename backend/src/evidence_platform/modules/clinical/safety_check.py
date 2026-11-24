@@ -288,8 +288,14 @@ async def _ai_screen(proposed: list[str], facts: list[dict], covered: set[tuple[
     return flags, meta
 
 
-async def run_safety_check(facts: list[dict], question: str, answer_texts: list[str]) -> dict[str, Any]:
-    proposed = proposed_drugs(question, *answer_texts)
+async def run_safety_check(facts: list[dict], question: str, answer_texts: list[str],
+                           evidence_texts: list[str] | None = None) -> dict[str, Any]:
+    """Drugs come from the question and the generated answer; drugs that only appear
+    in the retrieved evidence (titles) are checked too, because they are the options
+    the clinician will read about — essential when the answer was withheld."""
+    in_answer = proposed_drugs(question, *answer_texts)
+    in_evidence = [d for d in proposed_drugs(*(evidence_texts or [])) if d not in in_answer][:12]
+    proposed = in_answer + in_evidence
     flags = _rule_checks(proposed, facts)
     covered = {(f.proposed, f.patient_factor) for f in flags if f.category == "drug_interaction"}
     ai_flags, ai_meta = await _ai_screen(proposed, facts, covered)
@@ -297,8 +303,12 @@ async def run_safety_check(facts: list[dict], question: str, answer_texts: list[
     order = {"major": 0, "moderate": 1, "review": 2, "info": 3}
     flags.sort(key=lambda f: (order.get(f.severity, 3), f.category))
     from .case_context import fact_label
+    for f in flags:
+        f.message = f.message if f.proposed in in_answer else f"[drug discussed in retrieved evidence] {f.message}"
     return {
         "proposed_drugs": proposed,
+        "drugs_from_answer": in_answer,
+        "drugs_from_evidence": in_evidence,
         "patient_medications": [fact_label(f) for f in facts if f.get("field") == "medication"],
         "prior_therapies": [fact_label(f) for f in facts if f.get("field") == "prior_therapy"],
         "flags": [f.to_dict() for f in flags],

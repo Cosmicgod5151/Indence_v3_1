@@ -151,16 +151,21 @@ class AbstentionLayer:
                 f"Answer verification failed. Grounded evidence ratio was too low ({grounding_ratio:.1%})."
             )
 
-        # 5. Check if any claim directly contradicts the source text
-        for claim in verified_claims:
-            if claim["entailment_status"] == "contradiction":
-                logger.warning(
-                    f"Direct contradiction detected in claim: '{claim['text']}'. Triggering dynamic abstention."
-                )
+        # 5. Contradicted claims: remove them (they are reported, never displayed as
+        #    part of the answer). Abstain only when contradictions are a substantial
+        #    share of the answer (> 1/3), since that signals an unreliable generation.
+        contradicted = [c for c in verified_claims if c["entailment_status"] == "contradiction"]
+        if contradicted:
+            logger.warning("%d contradicted claim(s) removed by verification.", len(contradicted))
+            if len(contradicted) / len(verified_claims) > 1 / 3:
                 return (
                     "insufficient_evidence",
                     [],
-                    "Answer verification failed due to direct contradiction detected in generated claims."
+                    f"Answer verification failed: {len(contradicted)} of {len(verified_claims)} generated claims "
+                    "contradict their own cited sources."
                 )
+            for c in verified_claims:
+                if c["entailment_status"] == "contradiction":
+                    c["removed_by_verification"] = True
 
         return status, list(verified_claims), abstention_reason

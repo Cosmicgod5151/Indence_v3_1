@@ -304,7 +304,7 @@ class OpenRouterLLMClient(LLMClient):
             attempted.append(tag)
             # Transient overload (HTTP 500/502/503/504, timeouts): retry the SAME
             # model with backoff before falling through to the next one.
-            for attempt, backoff in enumerate((0, 5, 15, 30)):
+            for attempt, backoff in enumerate((0, 3)):
                 if backoff:
                     await asyncio.sleep(backoff)
                 try:
@@ -321,6 +321,9 @@ class OpenRouterLLMClient(LLMClient):
                 transient = any(code in err for code in ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "TimeoutError", "ReadError", "ConnectError"))
                 if not transient:
                     break
+            if any(code in err for code in ("HTTP 503", "HTTP 502", "HTTP 500", "TimeoutError")):
+                # Overloaded model: skip it for 2 minutes so later requests don't wait on it.
+                _cooldown_until[tag] = _time.monotonic() + 120
             errors.append(err)
             logger.warning("LLM attempt failed (%s); trying next model in chain.", errors[-1][:160])
         raise LLMUnavailableError(" | ".join(errors) or "No LLM provider configured")

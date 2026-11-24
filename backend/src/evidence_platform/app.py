@@ -314,14 +314,31 @@ def persist_and_build_response(db: Session, user: User, result: PipelineResult, 
                                                  "bottom_line", "clinical_context", "evidence_certainty")}
         synthesis_response["supporting_evidence"] = []
     else:
+        sv = result.section_verification or {}
+        removed_sections: list[dict[str, Any]] = []
+
+        def _verified(key: str, section: dict | None) -> dict | None:
+            sec = _align_section(section)
+            if not sec:
+                return sec
+            verdict = sv.get(key)
+            if verdict:
+                sec = {**sec, "verification": verdict}
+                if verdict.get("label") == "contradiction":   # never display contradicted prose
+                    removed_sections.append({"section": key, "text": sec.get("text", ""), "verification": verdict})
+                    return None
+            return sec
+
         synthesis_response = {
-            "recommendation": _align_section(synth_res.recommendation),
-            "clinical_reasoning": _align_section(synth_res.clinical_reasoning),
-            "supporting_evidence": [_align_section(se) or se for se in (synth_res.supporting_evidence or [])],
-            "alternatives": _align_section(synth_res.alternatives),
-            "bottom_line": _align_section(synth_res.bottom_line),
+            "recommendation": _verified("recommendation", synth_res.recommendation),
+            "clinical_reasoning": _verified("clinical_reasoning", synth_res.clinical_reasoning),
+            "supporting_evidence": [s for s in (_verified(f"supporting_evidence.{i}", se)
+                                                for i, se in enumerate(synth_res.supporting_evidence or [])) if s],
+            "alternatives": _verified("alternatives", synth_res.alternatives),
+            "bottom_line": _verified("bottom_line", synth_res.bottom_line),
             "clinical_context": synth_res.clinical_context,
             "evidence_certainty": synth_res.evidence_certainty,
+            "removed_by_verification": removed_sections,
         }
 
     markdown_lines = []
@@ -498,7 +515,8 @@ async def case_search(payload: dict[str, Any], user: User = Depends(get_current_
     disease = detect_disease([CaseFact(field=f.get("field", ""), value=str(f.get("value"))) for f in facts], fact_text)
     syn = response.get("synthesis") or {}
     answer_texts = [(syn.get(k) or {}).get("text", "") for k in ("recommendation", "alternatives", "bottom_line", "clinical_reasoning")]
-    safety = await run_safety_check(facts, question, answer_texts)
+    evidence_titles = [s.get("title", "") for s in (response.get("evidence_sources") or [])[:10]]
+    safety = await run_safety_check(facts, question, answer_texts, evidence_titles)
     response["model_trace"] = {**(response.get("model_trace") or {}), **safety.pop("model_trace")}
     response["case_mode"] = {
         "safety_check": safety,

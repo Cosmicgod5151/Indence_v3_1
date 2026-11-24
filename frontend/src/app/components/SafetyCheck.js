@@ -37,7 +37,14 @@ export default function SafetyCheck({ safety }) {
       </div>
 
       <div className="sc-context">
-        <div><span className="filter-label">Proposed drugs</span><p>{proposed_drugs.join(", ") || "none detected"}</p></div>
+        <div>
+          <span className="filter-label">Drugs checked</span>
+          <p>
+            {(safety.drugs_from_answer || []).length > 0 && <>From the answer: {safety.drugs_from_answer.join(", ")}<br /></>}
+            {(safety.drugs_from_evidence || []).length > 0 && <>Discussed in retrieved studies: {safety.drugs_from_evidence.join(", ")}</>}
+            {proposed_drugs.length === 0 && "none detected"}
+          </p>
+        </div>
         <div><span className="filter-label">Current medications</span><p>{patient_medications.join(", ") || "none recorded"}</p></div>
         <div><span className="filter-label">Earlier treatments</span><p>{prior_therapies.join("; ") || "none recorded"}</p></div>
       </div>

@@ -90,6 +90,7 @@ class PipelineResult:
     certainty: dict[str, Any] = field(default_factory=dict)
     safety_gate: str | None = None   # phi | out_of_scope | low_relevance | unknown_entity
     model_trace: dict[str, Any] = field(default_factory=dict)  # which model performed which step
+    section_verification: dict[str, Any] = field(default_factory=dict)  # verdict per synthesis section
 
 
 class QueryPipeline:
@@ -280,6 +281,18 @@ class QueryPipeline:
         )
         _tick("grounding_s", t0)
         counts["final_claims"] = len(final_claims)
+        # 11b. Verify the synthesis PROSE too (recommendation, reasoning, ...), not only
+        #      the atomic claims, so every displayed section has a verdict.
+        if final_status == "answer":
+            t0 = time.perf_counter()
+            result.section_verification = await self._verify_sections(synth_res)
+            _tick("section_verification_s", t0)
+            rec = result.section_verification.get("recommendation", {})
+            if rec.get("label") == "contradiction":
+                final_status, abstention_reason = "insufficient_evidence", (
+                    "Answer verification failed: the recommendation contradicts its own cited sources.")
+                result.final_status, result.abstention_reason = final_status, abstention_reason
+
         result.model_trace = {
             "generator": {**(synth_res.llm_meta or {}), "task": "Evidence synthesis (structured JSON answer)"},
             "verifier": {**(getattr(self.abstention_layer, "last_verifier_meta", {}) or {}),
@@ -299,6 +312,35 @@ class QueryPipeline:
                     final_status, len(final_claims), timings["total_e2e_s"])
         return result
 
+
+    async def _verify_sections(self, synth_res: SynthesizedAnswer) -> dict[str, Any]:
+        detailed = getattr(self.abstention_layer.entailment_client, "check_entailment_batch_detailed", None)
+        if detailed is None:
+            return {}
+        sections: list[tuple[str, dict]] = []
+        for key in ("recommendation", "clinical_reasoning", "alternatives", "bottom_line"):
+            sec = getattr(synth_res, key)
+            if isinstance(sec, dict) and sec.get("text"):
+                sections.append((key, sec))
+        for i, sec in enumerate(synth_res.supporting_evidence or []):
+            if isinstance(sec, dict) and sec.get("text"):
+                sections.append((f"supporting_evidence.{i}", sec))
+        pairs, keys = [], []
+        for key, sec in sections:
+            ids = list(dict.fromkeys(list(sec.get("evidence_ids") or []) +
+                                     [s.split(".S")[0] for s in (sec.get("sentence_ids") or [])]))
+            premise = " ".join(synth_res.evidence_map[e].text for e in ids if e in synth_res.evidence_map)
+            if premise:
+                pairs.append((premise, sec["text"]))
+                keys.append(key)
+        if not pairs:
+            return {}
+        try:
+            details = await detailed(pairs)
+        except Exception as e:  # verification failure must never crash the answer path
+            logger.warning("Section verification failed: %s", e)
+            return {}
+        return {k: d for k, d in zip(keys, details)}
 
 # ----------------------------------------------------------------------------
 # Pre-generation safety gates (deterministic; no LLM call is made when one fires)

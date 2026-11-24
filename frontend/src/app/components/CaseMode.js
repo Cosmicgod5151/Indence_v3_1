@@ -5,7 +5,7 @@ import EvidenceMap from "./EvidenceMap";
 import CertaintyCard from "./CertaintyCard";
 import ModelTrace from "./ModelTrace";
 import SafetyCheck from "./SafetyCheck";
-import ClaimVerification from "./ClaimVerification";
+import ClaimVerification, { VerifyBadge, RemovedByVerification } from "./ClaimVerification";
 
 // Synthetic, fictional, de-identified sample cases (see evals/cases/synthetic_cases.json).
 const SAMPLES = [
@@ -271,11 +271,12 @@ export default function CaseMode({ apiPost }) {
             ) : (
               <div className="case-answer">
                 {result.synthesis && result.synthesis.recommendation && (
-                  <p><strong>Answer:</strong> {result.synthesis.recommendation.text}</p>
+                  <p><strong>Answer:</strong> <VerifyBadge section={result.synthesis.recommendation} /> {result.synthesis.recommendation.text}</p>
                 )}
                 {result.synthesis && result.synthesis.bottom_line && (
                   <p className="case-bottom"><strong>Bottom line:</strong> {result.synthesis.bottom_line.text}</p>
                 )}
+                <RemovedByVerification items={result.synthesis && result.synthesis.removed_by_verification} />
                 {result.synthesis && result.synthesis.clinical_context && result.synthesis.clinical_context.assumptions && (
                   <p className="muted-note">Assumptions: {result.synthesis.clinical_context.assumptions}</p>
                 )}

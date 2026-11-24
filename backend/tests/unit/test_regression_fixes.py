@@ -207,3 +207,22 @@ def test_gemini_decision_verifier_maps_labels_and_confidence(monkeypatch):
     assert sent["url"].endswith("/v1beta/decisions") and sent["body"]["model"] == "gemini-decision-1"
     assert sent["body"]["input"].count("[PASSAGE") == 1          # shared premise sent once
     assert c.last_meta["model"] == "gemini-decision-1" and c.last_meta["fallback_used"] is False
+
+
+def test_minority_contradicted_claim_is_removed_not_whole_answer():
+    import asyncio
+
+    class Det:
+        async def check_entailment_batch_detailed(self, pairs):
+            return [{"label": "entailment", "confidence": 0.97, "probabilities": {}},
+                    {"label": "entailment", "confidence": 0.95, "probabilities": {}},
+                    {"label": "contradiction", "confidence": 0.91, "probabilities": {}}]
+
+    layer = AbstentionLayer(Det())
+    ev = {"E01": _cand("a", "P1", "Drug X improved PFS (HR 0.6)."), "E02": _cand("b", "P2", "Drug X improved OS.")}
+    claims = [{"text": "PFS improved.", "evidence_ids": ["E01"]}, {"text": "OS improved.", "evidence_ids": ["E02"]},
+              {"text": "PFS HR was 0.9.", "evidence_ids": ["E01"]}]
+    status, out, _ = asyncio.run(layer.verify_and_calibrate("answer", claims, ev))
+    assert status == "answer"
+    assert [c.get("removed_by_verification", False) for c in out] == [False, False, True]
+    assert out[0]["entailment_confidence"] == 0.97
