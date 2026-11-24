@@ -38,6 +38,8 @@ from ..synthesis.abstention import AbstentionLayer
 from ..synthesis.evidence_grouper import EvidenceGrouper
 from ..synthesis.contradiction_checker import ContradictionChecker
 from ..synthesis.citation_auditor import CitationAuditor
+from ..synthesis.effect_map import build_evidence_map
+from ..synthesis.certainty import assess_certainty
 from ..clinical.clinical_intent import ClinicalIntentExtractor, ClinicalQueryIntent
 from ..clinical.population_matcher import PopulationMatchEvaluator
 from ..clinical.evidence_hierarchy import EvidenceHierarchyRanker
@@ -79,6 +81,8 @@ class PipelineResult:
     timings: dict[str, float] = field(default_factory=dict)
     candidate_counts: dict[str, int] = field(default_factory=dict)
     debug_info: Any = None
+    evidence_map: dict[str, Any] = field(default_factory=dict)
+    certainty: dict[str, Any] = field(default_factory=dict)
 
 
 class QueryPipeline:
@@ -179,6 +183,21 @@ class QueryPipeline:
         t0 = time.perf_counter()
         contradiction_info = self.contradiction_checker.check_contradictions(clusters, assembled.selected_candidates)
         _tick("contradiction_check_s", t0)
+
+        # 7b. Quantitative Evidence Map (effect sizes + heterogeneity) and the
+        #     GRADE-inspired certainty rating. Quantitative conflicts are merged
+        #     into the contradiction analysis so the generator must address them.
+        t0 = time.perf_counter()
+        ev_ids = {c.chunk_id: f"E{i + 1:02d}" for i, c in enumerate(assembled.selected_candidates)}
+        map_pool = list(assembled.ranked_candidates[:25]) or list(assembled.selected_candidates)
+        for c in assembled.selected_candidates:          # always include the bundle itself
+            if c not in map_pool:
+                map_pool.append(c)
+        evidence_map = build_evidence_map(map_pool, ev_ids)
+        contradiction_info = merge_quantitative_conflicts(contradiction_info, evidence_map)
+        result.evidence_map = evidence_map
+        result.certainty = assess_certainty(assembled.selected_candidates, evidence_map, contradiction_info)
+        _tick("evidence_map_certainty_s", t0)
         result.contradiction_info = contradiction_info
 
         if not options.run_synthesis:
@@ -269,3 +288,35 @@ def evidence_sources(result: PipelineResult) -> list[dict[str, Any]]:
             "snippet": c.text[:400],
         })
     return out
+
+
+def merge_quantitative_conflicts(contradiction_info: dict[str, Any], evidence_map: dict[str, Any]) -> dict[str, Any]:
+    """Add statistical conflicts from the evidence map to the narrative contradiction analysis."""
+    info = dict(contradiction_info or {})
+    items = list(info.get("contradictions") or [])
+    groups = {(g["measure"], g["endpoint"]): g for g in evidence_map.get("groups", [])}
+    for qc in evidence_map.get("quantitative_conflicts", []):
+        g = groups.get((qc["measure"], qc["endpoint"]))
+        ests = (g or {}).get("estimates", [])
+        items.append({
+            "type": "Quantitative conflict (effect sizes)",
+            "severity": "high" if "OPPOSITE" in qc["description"] else "moderate",
+            "description": f"{qc['endpoint']} — {qc['description']}.",
+            "claim_in_conflict": f"Direction/magnitude of the {qc['measure']} for {qc['endpoint'].lower()}",
+            "conflicting_evidence_ids": [{"pmcid": e["pmcid"], "study_type": e["study_type"]} for e in ests[:6]],
+            "reason_for_difference": "Studies may differ in population, comparator, line of therapy or follow-up; "
+                                     "see the Evidence Map for each estimate and its source sentence.",
+            "evidence_quality": [{"pmcid": e["pmcid"], "study_type": e["study_type"],
+                                  "strength_tier": f"{e['measure']} {e['estimate']} ({e['ci_low']}–{e['ci_high']})"}
+                                 for e in ests[:6]],
+            "clinical_interpretation": "Do not rely on a single pooled conclusion; review each study's population "
+                                       "(manual review recommended).",
+            "action": "Inspect the forest plot and source sentences.",
+        })
+    info["contradictions"] = items
+    info["contradiction_count"] = len(items)
+    info["has_contradiction"] = bool(items)
+    info["quantitative_conflict_count"] = len(evidence_map.get("quantitative_conflicts", []))
+    if items and not info.get("consensus_summary", "").startswith("Detected"):
+        info["consensus_summary"] = f"Detected {len(items)} evidence conflict(s) requiring clinician review."
+    return info

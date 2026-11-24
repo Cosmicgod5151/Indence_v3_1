@@ -130,7 +130,12 @@ Return ONLY a raw JSON object matching this schema. Do not output text outside t
 - Do NOT produce redundant claims. If evidence E01 and E02 both show the same drug improves OS, create ONE claim synthesizing both, citing both evidence IDs.
 - The "recommendation" section synthesizes across all evidence. The "direct_answer_claims" provide atomic grounding. These serve different purposes — both are required.
 - If the evidence does not support answering the query, set status to "insufficient_evidence", leave synthesis sections as null, and explain in abstention_reason.
+"""
 
+# Appended ONLY for budget-constrained fallback models (OpenRouter ":free"
+# thinking models), whose hidden reasoning otherwise exhausts the output budget.
+# Primary models receive the full, unabridged prompt.
+COMPACT_OUTPUT_SUFFIX = """
 ### LENGTH LIMITS (STRICT)
 - Every "text" field: at most 60 words.
 - supporting_evidence: at most 4 items. direct_answer_claims: at most 6 atomic claims. limitations_claims: at most 2 items.
@@ -218,10 +223,13 @@ class OpenRouterLLMClient(LLMClient):
         return obj
 
     async def _call_one(self, provider: str, model: str, system_prompt: str, user_content: str,
-                        max_tokens: int, temperature: float) -> tuple[dict[str, Any], dict[str, Any]]:
+                        max_tokens: int, temperature: float, compact_suffix: str = "") -> tuple[dict[str, Any], dict[str, Any]]:
         import time as _time
         url = PROVIDERS[provider][0]
         headers = self._headers_for(self._key_for(provider))
+        budget_model = provider == "openrouter" and model.endswith(":free")
+        if budget_model and compact_suffix:
+            system_prompt = system_prompt + compact_suffix
         payload = {
             "model": model,
             "messages": [
@@ -232,12 +240,11 @@ class OpenRouterLLMClient(LLMClient):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        # Many free models are "thinking" models; unbounded hidden reasoning can
-        # consume the whole token budget before any JSON is written.
-        if provider == "openrouter":
+        # Free OpenRouter "thinking" models: unbounded hidden reasoning can consume
+        # the whole output budget, so they are asked for low effort. Primary
+        # models (e.g. Gemini) keep their default reasoning for answer quality.
+        if budget_model:
             payload["reasoning"] = {"effort": "low"}
-        elif provider == "gemini":
-            payload["reasoning_effort"] = "low"
         t0 = _time.perf_counter()
         # httpx timeouts are per network operation; wait_for enforces a hard
         # overall deadline (providers can keep a slow request alive for minutes).
@@ -264,7 +271,8 @@ class OpenRouterLLMClient(LLMClient):
         return parsed, meta
 
     async def complete_json(
-        self, system_prompt: str, user_content: str, max_tokens: int = 1500, temperature: float = 0.0
+        self, system_prompt: str, user_content: str, max_tokens: int = 1500, temperature: float = 0.0,
+        compact_suffix: str = "",
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """JSON completion over the fallback chain.
 
@@ -283,7 +291,7 @@ class OpenRouterLLMClient(LLMClient):
                 continue
             attempted.append(tag)
             try:
-                parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens, temperature)
+                parsed, meta = await self._call_one(provider, model, system_prompt, user_content, max_tokens, temperature, compact_suffix)
                 meta["attempted_models"] = attempted
                 meta["fallback_errors"] = errors
                 return parsed, meta
@@ -403,7 +411,8 @@ Rejected Subgroups: {rejected_str}"""
 
         try:
             parsed_json, meta = await self.complete_json(
-                EVIDENCE_SYNTHESIS_SYSTEM_PROMPT, user_content, max_tokens=4000
+                EVIDENCE_SYNTHESIS_SYSTEM_PROMPT, user_content, max_tokens=8000,
+                compact_suffix=COMPACT_OUTPUT_SUFFIX,
             )
         except LLMUnavailableError as e:
             logger.error("OpenRouter synthesis failed: %s", e)
@@ -478,7 +487,7 @@ class OpenRouterEntailmentClient(EntailmentClient):
             items.append(f"[{i}] PREMISE: {premise[:3000]}\n[{i}] CLAIM: {hypothesis}")
         user = "\n\n".join(items)
         try:
-            parsed, _meta = await self._llm.complete_json(self.SYSTEM_PROMPT, user, max_tokens=60 + 12 * len(pairs))
+            parsed, _meta = await self._llm.complete_json(self.SYSTEM_PROMPT, user, max_tokens=1500 + 40 * len(pairs))  # thinking models count reasoning against this budget
             labels = parsed.get("labels") or []
             if not isinstance(labels, list):
                 raise ValueError("labels is not a list")
