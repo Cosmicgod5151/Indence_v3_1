@@ -25,6 +25,11 @@ const SAMPLES = [
     text: "54-year-old woman with metastatic breast cancer. Invasive ductal carcinoma, ER negative, PR negative, HER2 positive (IHC 3+). Metastases to liver and lungs. First-line treatment with trastuzumab, pertuzumab and docetaxel for 14 months; now progressive disease in the liver. No brain metastases on MRI. ECOG 1. LVEF 58%. ALT 48 U/L.",
   },
   {
+    label: "Breast · HR+ after CDK4/6i",
+    question: "What is the best-supported second-line treatment after progression on a CDK4/6 inhibitor?",
+    text: "66-year-old woman with metastatic breast cancer to bone and liver. Invasive ductal carcinoma, ER positive (90%), PR positive (40%), HER2 negative (IHC 1+). First-line letrozole plus palbociclib for 22 months; now progressive disease in the liver. ctDNA: PIK3CA H1047R mutation detected; ESR1 mutation not detected. ECOG 1. Comorbidities: type 2 diabetes (HbA1c 8.1%) and atrial fibrillation. Current medications: metformin, warfarin, and clarithromycin for a chest infection. eGFR 58 mL/min. Bilirubin 0.7 mg/dL.",
+  },
+  {
     label: "Colorectal · left-sided RAS wt",
     question: "Should an anti-EGFR antibody be added to first-line chemotherapy?",
     text: "59-year-old man with adenocarcinoma of the sigmoid colon (left-sided) and synchronous unresectable liver metastases. Extended RAS testing: KRAS and NRAS wild-type. BRAF V600E not detected. Microsatellite stable (MSS), pMMR. No prior chemotherapy. ECOG 0. Bilirubin 0.8 mg/dL, platelets 260 x10^9/L.",

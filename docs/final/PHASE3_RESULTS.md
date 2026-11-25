@@ -44,7 +44,7 @@ All three systems use the **same generator (gemini-3.1-flash-lite)**, so the dif
 | Citations that resolve to real/provided sources | **4%** (47/49 fabricated or misattributed PMIDs) | 100% | 100% |
 | Numeric faithfulness (numbers in the answer found in the evidence) | n/a | 95.7% | **97.3%** |
 | Wrong-subgroup citations (e.g. HER2-low cited for HER2-positive) | n/a | 6.0% | **0%** |
-| Latency p50 (answered) | 8.2 s | 5.4 s | 14.3 s |
+| Latency p50 / p95 (answered) | 8.2 s / 26.1 s | 5.4 s / 17.4 s | 9.7 s / 14.7 s |
 
 The PubMed check was spot-checked by hand. The LLM cites the right *titles* (FLAURA, the FOLFIRINOX NEJM trial, DESTINY-Breast04) with PMIDs that belong to unrelated papers: vascular surgery, lung stem cells, plant root biology.
 
