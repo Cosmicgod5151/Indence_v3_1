@@ -209,6 +209,54 @@ def test_gemini_decision_verifier_maps_labels_and_confidence(monkeypatch):
     assert c.last_meta["model"] == "gemini-decision-1" and c.last_meta["fallback_used"] is False
 
 
+def test_verifier_sees_every_cited_passage_in_full(monkeypatch):
+    """Regression: cited passages were joined and cut at 4,000 characters, so a section citing
+    several passages was judged on half its evidence (T-DXd recommendation: 48% 'not established';
+    with full passages: 95% supported)."""
+    import asyncio
+    import httpx
+    from evidence_platform.adapters.models.gemini_decision import GeminiDecisionEntailmentClient
+
+    sent = {}
+
+    class FakeResp:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {"answers": {f"claim_{i}": {"choice": "supported", "confidence": 0.95} for i in range(2)}}
+
+    async def fake_post(self, url, headers=None, json=None):
+        sent["body"] = json
+        return FakeResp()
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+    p = [f"Passage {k}: " + ("x" * 2400) + f" END{k}" for k in range(5)]   # 5 x ~2.4k chars = ~12k
+    c = GeminiDecisionEntailmentClient(api_key="test-key")
+    asyncio.run(c.check_entailment_batch_detailed([(p, "section citing all five"), ([p[1], p[3]], "claim")]))
+    body = sent["body"]
+    for k in range(5):
+        assert f"END{k}" in body["input"]                        # every passage arrives complete
+    assert body["input"].count("[PASSAGE") == 5                  # shared passages sent once
+    assert "[PASSAGE P2], [PASSAGE P4]" in body["questions"]["claim_1"]["instructions"]
+
+
+def test_claim_and_section_premises_pass_passage_lists():
+    import asyncio
+
+    seen = []
+
+    class Det:
+        async def check_entailment_batch_detailed(self, pairs):
+            seen.extend(pairs)
+            return [{"label": "entailment", "confidence": 0.9, "probabilities": {}} for _ in pairs]
+
+    layer = AbstentionLayer(Det())
+    ev = {"E01": _cand("a", "P1", "Drug X improved PFS."), "E02": _cand("b", "P2", "Drug X improved OS.")}
+    claims = [{"text": "PFS and OS improved.", "evidence_ids": ["E01", "E02.S3"]}]
+    asyncio.run(layer.verify_and_calibrate("answer", claims, ev))
+    assert seen[0][0] == ["Drug X improved PFS.", "Drug X improved OS."]   # list, sentence IDs resolved
+
+
 def test_minority_contradicted_claim_is_removed_not_whole_answer():
     import asyncio
 

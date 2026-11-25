@@ -147,7 +147,7 @@ const rows = [
   ["HER2+ / EGFR+", "Never detected; HER2-positive listed as rejected", "Fixed; 0% wrong-subgroup citations"],
   ["Patient context", "Proposed only", "Case Mode, Applicability Matrix, Safety Check"],
   ["Latency excl. LLM", "≈ 9.6 s", "1.46 s"],
-  ["Automated tests", "72", "120"],
+  ["Automated tests", "72", "122"],
 ];
 const head = (t) => ({ text: t, options: { bold: true, color: C.background1, fill: { color: C.text1 } } });
 s.addTable([

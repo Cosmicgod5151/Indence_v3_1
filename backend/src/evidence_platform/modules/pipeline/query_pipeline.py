@@ -327,11 +327,12 @@ class QueryPipeline:
                 sections.append((f"supporting_evidence.{i}", sec))
         pairs, keys = [], []
         for key, sec in sections:
-            ids = list(dict.fromkeys(list(sec.get("evidence_ids") or []) +
-                                     [s.split(".S")[0] for s in (sec.get("sentence_ids") or [])]))
-            premise = " ".join(synth_res.evidence_map[e].text for e in ids if e in synth_res.evidence_map)
-            if premise:
-                pairs.append((premise, sec["text"]))
+            ids = list(dict.fromkeys(str(s).split(".S")[0] for s in
+                                     list(sec.get("evidence_ids") or []) + list(sec.get("sentence_ids") or [])))
+            # Each cited passage is passed separately so the verifier receives all of it.
+            passages = [synth_res.evidence_map[e].text for e in ids if e in synth_res.evidence_map]
+            if passages:
+                pairs.append((passages, sec["text"]))
                 keys.append(key)
         if not pairs:
             return {}

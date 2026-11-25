@@ -81,7 +81,7 @@ The applicability rows were computed with facts from the regex fallback, because
 | Rerank + MMR | 5.76 s | 1.17 s (4.9×) |
 
 ## 6. Engineering
-- Tests: **72 → 119** passing (16 regression, 8 effect-map, 15 case-mode, 4 safety-check and other suites).
+- Tests: **72 → 122** passing (18 regression, 8 effect-map, 15 case-mode, 4 safety-check and other suites).
 - **Free-tier constraints found and handled:**
   - Gemini Flash models allow 20 requests/day each, so the app uses a 10-model chain and honours each model's reset time.
   - Transient 503s get a retry with backoff.
@@ -99,3 +99,9 @@ The applicability rows were computed with facts from the regex fallback, because
 - The synthetic cases were labelled by the author.
 - No clinician validation has been done yet.
 - The free-tier generator (flash-lite) was used in the comparisons. The live demo uses gemini-2.5-flash whenever its quota allows.
+
+## Post-evaluation fix: verifier truncation (25 Nov 2026)
+- **Defect:** the passages cited by a claim or synthesis section were joined and cut at 4,000 characters before being sent to Gemini Decision 1. Text citing three or more passages was therefore judged on only part of its evidence.
+- **Example:** in the trastuzumab deruxtecan recommendation, which cited 5 passages (7,705 characters), the verdict was "not established" (48%) on truncated passages and "supported" (95%) on full passages. Its three sentences checked separately scored 90–96% supported.
+- **Fix:** every cited passage is sent once, in full, and each claim is judged against exactly its own passages (`gemini_decision.py`, `abstention.py`, `query_pipeline._verify_sections`). Two regression tests were added (122 passing).
+- **Effect on reported numbers:** Section 2 was measured before the fix and is unchanged. The 90% answer rate may be an underestimate, because the "too few claims verified" abstention could have been caused by this defect. Re-run `evals/rerun_indence_column.py` to re-measure when the free-tier quota allows.

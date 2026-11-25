@@ -231,7 +231,7 @@ r.table(["Area", "State at Milestone-1", "State at final evaluation"], [
     ["Patient context (Feature B)", "Proposed only", "Implemented: Patient Case Mode, Applicability Matrix, Safety Check"],
     ["Appraisal", "LLM wrote its own ‘High quality’ label", "Deterministic effect map, heterogeneity and GRADE-inspired certainty"],
     ["Model transparency", "Traces recorded ‘mock-llm’", "Per-step model attribution shown in the UI and stored in traces"],
-    ["Automated tests", "72 passing", "120 passing"],
+    ["Automated tests", "72 passing", "122 passing"],
 ], [1.4, 2.4, 2.4], "Milestone-1 versus final state", bold_first_col=True)
 
 r.h2("1.6 Research Questions")
@@ -375,7 +375,7 @@ NFR = [
     ["NFR-06 Safe abstention", "Abstain when unsupported", f"Correct abstention {pct(SAF['indence']['correct_abstention_rate'])}", "Met"],
     ["NFR-07 Privacy / security", "No PHI to providers; secure sessions", f"PHI sent: {SAF['indence']['phi_sent_to_provider']}; hashed session tokens; no TLS locally", "Partly"],
     ["NFR-08 Reproducibility", "Versions stored per run", "Model IDs, timings, candidates stored; seeded evals", "Met"],
-    ["NFR-09 Maintainability", "Modular, tested", "Modular monolith; 120 automated tests", "Met"],
+    ["NFR-09 Maintainability", "Modular, tested", "Modular monolith; 122 automated tests", "Met"],
     ["NFR-10 Accessibility", "Not colour-only; readable", "Icons + text for all statuses; no formal audit", "Partly"],
     ["NFR-11 Conflict transparency", "No silent removal", "Removed content is listed with its reason", "Met"],
     ["NFR-12 Context integrity", "Every fact traceable", "Untraceable facts dropped automatically; traceability 95.8%", "Met"],
@@ -582,14 +582,14 @@ r.h2("6.1 Test Strategy")
 r.p("Testing has three layers: automated unit and integration tests for deterministic logic and the API; "
     "benchmark evaluations of retrieval, safety and Case Mode on labelled sets; and live end-to-end checks in "
     "the browser for each user flow. The number of passing automated tests rose from 72 at the start of the "
-    "final phase to 120.")
+    "final phase to 122.")
 r.table(["Suite", "What it pins down", "Tests"], [
-    ["test_regression_fixes.py", "Every safety and retrieval defect in Tables 5.3 and 5.4", "16"],
+    ["test_regression_fixes.py", "Every safety and retrieval defect in Tables 5.3 and 5.4, and the verifier fix", "18"],
     ["test_effect_map.py", "Effect extraction, treatment vs prognostic HRs, Q, I², τ²", "8"],
     ["test_case_mode.py", "PHI guard, span verification, conflicts, missing data, applicability rules", "15"],
     ["test_safety_check.py", "Interaction, comorbidity and treatment-history rules", "4"],
     ["test_api.py and others", "Auth, abstention without synthesis, pipeline contracts, ingestion", "77"],
-    ["**Total**", "", "**120 passing**"],
+    ["**Total**", "", "**122 passing**"],
 ], [1.9, 3.4, 0.9], "Automated test suites")
 
 r.h2("6.2 Evaluation Datasets")
@@ -657,6 +657,14 @@ r.p("The LLM-only system named real trials (FLAURA, DESTINY-Breast04) but attach
     "other, the verifier found that a generated claim contradicted its own cited source. This lower answer rate "
     "is the intended trade-off: an unverifiable answer is not shown. Indence is slower because it does more "
     "work, but its p95 remains within the 15-second target.")
+r.p("**A verifier defect found after this benchmark.** The passages cited by a claim or section were joined and "
+    "cut at 4,000 characters before verification, so text citing three or more passages was judged on only part "
+    "of its evidence. On the trastuzumab deruxtecan question, the recommendation was rated ‘not established’ "
+    "(48%) with truncated passages and ‘supported’ (95%) with the full passages. The fix sends every cited passage "
+    "once, in full, and judges each claim against exactly its own passages; a regression test pins it. After the "
+    "fix, all six sections of that answer verified as supported. The figures in Table 6.5 were measured before "
+    "the fix and are reported unchanged; the 90% answer rate may be an underestimate, because the abstention "
+    "for ‘too few claims verified’ could have been caused by this defect.")
 
 r.h2("6.5 Patient Case Mode (RQ3)")
 r.table(["Metric", "Result"], [
@@ -765,7 +773,7 @@ r.table(["Completed for final evaluation", "Remaining / future"], [
     ["Patient Case Mode, Applicability Matrix, Safety Check", "Full-text eligibility extraction for applicability"],
     ["Evidence map, heterogeneity and certainty engine", "Automated retraction and update refresh (FR-10)"],
     ["Claim and section verification with Decision 1", "Indian guidelines and drug terminology (FR-15)"],
-    ["Model attribution UI; 120 automated tests", "TLS, role-based access and security review before any pilot"],
+    ["Model attribution UI; 122 automated tests", "TLS, role-based access and security review before any pilot"],
 ], [3.1, 3.1], "Completed versus remaining work", size=10)
 
 r.h2("7.6 Future Scope and Startup Potential")

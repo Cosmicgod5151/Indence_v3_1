@@ -97,9 +97,11 @@ class AbstentionLayer:
             logger.info(f"Running calibrated batched verification for {len(direct_claims)} claims...")
             pairs, idx_with_premise = [], []
             for i, claim in enumerate(direct_claims):
-                premise = " ".join(evidence_map[e].text for e in claim.get("evidence_ids", []) if e in evidence_map)
-                if premise:
-                    pairs.append((premise, claim.get("text", "")))
+                # Pass the cited passages individually: the verifier sends each one in full.
+                ids = dict.fromkeys(str(e).split(".S")[0] for e in claim.get("evidence_ids", []))
+                passages = [evidence_map[e].text for e in ids if e in evidence_map]
+                if passages:
+                    pairs.append((passages, claim.get("text", "")))
                     idx_with_premise.append(i)
             details = await detailed_fn(pairs) if pairs else []
             by_idx = dict(zip(idx_with_premise, details))

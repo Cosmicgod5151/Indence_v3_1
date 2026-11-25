@@ -70,6 +70,9 @@ Yes. It is an LLM judge. Mitigations: calibrated confidence is shown, never hidd
 **17. Why did Indence answer only 90% of answerable questions?**
 It withheld 2 of 20. In one, too few claims could be verified. In the other, the verifier caught a generated claim contradicting its own cited source. For a clinical tool we prefer "I can't verify this, here are the sources" to a fluent unsupported answer.
 
+**17b. Did you find bugs after the evaluation?**
+Yes, one in the verifier. The passages a claim cited were joined and cut at 4,000 characters, so text citing three or more passages was judged on half its evidence. The T-DXd recommendation went from "not established, 48%" to "supported, 95%" once it saw the full passages. We fixed it (each passage sent once, in full), added regression tests, and reported the benchmark numbers unchanged, with a note that the 90% answer rate may be an underestimate. It shows why per-claim confidence is displayed rather than hidden.
+
 **18. Why free models? Doesn't that lower quality?**
 There was no budget. We benchmarked models on identical evidence: gemini-2.5-flash had 0 invalid citation IDs and all of its numbers appeared verbatim in the evidence. Primary models get the full prompt. Only the last-resort free OpenRouter models get compact output. All three systems in the comparison used the same generator, so the comparison is fair regardless of model strength.
 
@@ -131,7 +134,7 @@ Qdrant shards horizontally and the corpus pipeline is already batch-based, so th
 The median for answered questions is 9.7 s and the 95th percentile is 14.7 s, so the 15 s target is met. Local work went from about 9.6 s to 1.46 s (13.7× faster retrieval) through parallel dense/sparse search, batched SQL, vector reuse for MMR and moving GPU work off the event loop. The rest is two external calls on free tiers. Streaming the answer and a paid tier would bring the median under target.
 
 **29. How did you test it?**
-- **Automated tests:** 120, up from 72, including 16 regression tests for each defect found.
+- **Automated tests:** 122, up from 72, including 18 regression tests for the defects found.
 - **Benchmarks:** retrieval ablation (119 questions), a 3-system safety benchmark (40) and Case Mode (8 cases, 85 gold facts).
 - **Live checks:** every UI flow tested in the browser.
 
@@ -175,4 +178,4 @@ Yes, and it is disclosed in Appendix E. Gemini and OpenRouter models are runtime
 | Fabricated PMIDs, LLM only | 47 of 49 |
 | Case Mode | fact recall 98.8% · applicability 0.704 → 0.878 · 7/8 cases improved |
 | Latency | local 1.46 s (was ≈ 9.6 s) · answered p50 9.7 s, p95 14.7 s |
-| Tests | 72 → 120 |
+| Tests | 72 → 122 |
