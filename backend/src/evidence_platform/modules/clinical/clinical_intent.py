@@ -73,14 +73,14 @@ class ClinicalIntentExtractor:
 
     # Disease patterns
     DISEASE_PATTERNS = [
-        (r"\bbreast\s+cancer\b|\bbreast\s+carcinoma\b|\bmbc\b|\btnbc\b", "Breast Cancer"),
-        (r"\bnon-small\s+cell\s+lung\s+cancer\b|\bnsclc\b", "Non-Small Cell Lung Cancer"),
+        (r"\bbreast\s+cancer\b|\bbreast\s+carcinoma\b|\bmbc\b|\btnbc\b|\binvasive\s+(?:ductal|lobular)\s+carcinoma\b", "Breast Cancer"),
+        (r"\bnon-small[\s-]+cell\s+lung\s+(?:cancer|carcinoma)\b|\bnsclc\b|\blung\s+adenocarcinoma\b|\badenocarcinoma\s+of\s+the\s+lung\b|\blung\s+squamous\b|\bsquamous\s+cell\s+(?:lung\s+)?carcinoma\s+of\s+the\s+lung\b", "Non-Small Cell Lung Cancer"),
         (r"\bsmall\s+cell\s+lung\s+cancer\b|\bsclc\b", "Small Cell Lung Cancer"),
         (r"\blung\s+cancer\b|\blung\s+carcinoma\b", "Lung Cancer"),
-        (r"\bcolorectal\s+cancer\b|\bcrc\b|\bmcrc\b|\bcolon\s+cancer\b|\brectal\s+cancer\b", "Colorectal Cancer"),
-        (r"\bprostate\s+cancer\b|\bprostate\s+carcinoma\b", "Prostate Cancer"),
+        (r"\bcolorectal\s+(?:cancer|carcinoma|adenocarcinoma)\b|\bcrc\b|\bmcrc\b|\bcolon\s+cancer\b|\brectal\s+cancer\b|\b(?:sigmoid|ascending|descending|transverse)\s+colon\b|\bcolon\s+adenocarcinoma\b|\badenocarcinoma\s+of\s+the\s+(?:\w+\s+)?(?:colon|rectum)\b", "Colorectal Cancer"),
+        (r"\bprostate\s+(?:cancer|carcinoma|adenocarcinoma)\b|\bmcspc\b|\bmcrpc\b", "Prostate Cancer"),
         (r"\bcervical\s+cancer\b|\bcervical\s+carcinoma\b|\bcervix\s+cancer\b", "Cervical Cancer"),
-        (r"\bovarian\s+cancer\b|\bovarian\s+carcinoma\b", "Ovarian Cancer"),
+        (r"\bovarian\s+(?:cancer|carcinoma)\b|\bhigh-grade\s+serous\b", "Ovarian Cancer"),
         (r"\bmelanoma\b", "Melanoma"),
         (r"\bpancreatic\s+cancer\b|\bpancreatic\s+ductal\s+adenocarcinoma\b", "Pancreatic Cancer"),
         (r"\bhead\s+and\s+neck\b|\bhnscc\b", "Head and Neck Cancer"),
@@ -90,20 +90,25 @@ class ClinicalIntentExtractor:
     ]
 
     # Biomarker & Subtype patterns
+    # Note on "+" / "-" suffixes: "\b" cannot follow "+" (no word boundary between
+    # "+" and a space), so receptor-status tokens use "(?!\w)" instead. A bare
+    # "her2-" must not match "her2-positive" / "her2-low".
     BIOMARKER_PATTERNS = [
-        (r"\bher2[- ]positive\b|\bher2\+\b|\bher2\s*pos\b", "HER2-positive", ["HER2-low", "HER2-ultralow", "HER2-negative", "Triple-negative"]),
+        (r"\bher2[- ]positive\b|\bher2\s*\+(?!\w)|\bher2\s*pos\b|\bher2[- ]amplified\b", "HER2-positive", ["HER2-low", "HER2-ultralow", "HER2-negative", "Triple-negative"]),
         (r"\bher2[- ]low\b", "HER2-low", ["HER2-positive", "HER2-negative", "Triple-negative"]),
         (r"\bher2[- ]ultralow\b", "HER2-ultralow", ["HER2-positive", "HER2-negative"]),
-        (r"\bher2[- ]negative\b|\bher2-\b", "HER2-negative", ["HER2-positive"]),
+        (r"\bher2[- ]negative\b|\bher2\s*-(?![\w-])", "HER2-negative", ["HER2-positive"]),
         (r"\btriple[- ]negative\b|\btnbc\b", "Triple-negative", ["HER2-positive", "HR-positive"]),
-        (r"\bhr[- ]positive\b|\bhr\+\b|\ber\+\b|\bpr\+\b|\ber/pr\+\b", "HR-positive", ["Triple-negative", "HR-negative"]),
-        (r"\begfr[- ]mutant\b|\begfr\s*mutation\b|\begfr\+\b", "EGFR-mutant", ["EGFR wild-type"]),
+        (r"\bhr[- ]positive\b|\bhr\s*\+(?!\w)|\ber\s*\+(?!\w)|\bpr\s*\+(?!\w)|\ber/pr\s*\+(?!\w)|\bhormone[- ]receptor[- ]positive\b", "HR-positive", ["Triple-negative", "HR-negative"]),
+        (r"\begfr[- ]mutant\b|\begfr[- ]mutated\b|\begfr\s*mutation\b|\begfr\s*\+(?!\w)|\begfr\s+exon\s*(?:19|21)\b|\bl858r\b", "EGFR-mutant", ["EGFR wild-type"]),
         (r"\begfr\s*(?:wild[- ]?type|wt)\b", "EGFR wild-type", ["EGFR-mutant"]),
         (r"\bkras\s*(?:wild[- ]?type|wt)\b|\bras\s*(?:wild[- ]?type|wt)\b", "KRAS/RAS wild-type", ["KRAS mutant"]),
         (r"\bkras\s*(?:mutant|mut|g12c)\b", "KRAS-mutant", ["KRAS wild-type"]),
         (r"\bbraf\s*v600e?\b|\bbraf\s*mutant\b", "BRAF-mutant", ["BRAF wild-type"]),
-        (r"\balk[- ]positive\b|\balk\s*rearrangement\b|\balk\+\b", "ALK-positive", ["ALK wild-type"]),
-        (r"\bpd[- ]l1\s*(?:positive|high|\u2265\s*50%|\u2265\s*1%)\b", "PD-L1 positive", ["PD-L1 negative"]),
+        (r"\balk[- ]positive\b|\balk\s*rearrangement\b|\balk\s*\+(?!\w)|\balk[- ]rearranged\b", "ALK-positive", ["ALK wild-type"]),
+        (r"\bpd[- ]l1\s*(?:positive\b|high\b|(?:\u2265|>=)\s*\d{1,3}\s*%)", "PD-L1 positive", ["PD-L1 negative"]),
+        (r"\bg?brca[12]?[- ]?(?:mutat\w*|positive|pathogenic|carrier)|\bbrca[12]?m\b|\b(?:germline|somatic)\s+brca[12]?\b|\bbrca[12]?\s+(?:pathogenic|mutation)", "BRCA-mutant", ["BRCA wild-type"]),
+        (r"\bhrd[- ]positive\b|\bhomologous recombination deficien", "HRD-positive", ["HR-proficient"]),
         (r"\bmsi[- ]h\b|\bdmmr\b", "MSI-H/dMMR", ["MSS/pMMR"]),
         (r"\bmss\b|\bpmmr\b", "MSS/pMMR", ["MSI-H/dMMR"]),
     ]
@@ -231,6 +236,10 @@ class ClinicalIntentExtractor:
                 for r in rej_list:
                     if r not in rejected:
                         rejected.append(r)
+
+        # A subgroup the user explicitly asked about can never be "rejected"
+        # (e.g. "HR+/HER2- breast cancer" must not reject HR-positive).
+        rejected = [r for r in rejected if r not in biomarkers]
 
         biomarker = biomarkers[0] if biomarkers else None
         secondary_biomarkers = biomarkers[1:] if len(biomarkers) > 1 else []

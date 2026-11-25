@@ -1,0 +1,1199 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-11-25T02:34:41",
+  "seed": 20261125,
+  "method": "Build the silver-standard known-item retrieval benchmark.",
+  "n": 119,
+  "items": [
+    {
+      "id": "ret_001",
+      "question": "How does artificial intelligence compare to conventional radiologic imaging in diagnostic accuracy for differentiating low-grade from high-grade pancreatic neuroendocrine tumors?",
+      "relevant_pmcids": [
+        "PMC13227626"
+      ],
+      "source_title": "Diagnostic performance of artificial intelligence versus conventional imaging for differentiating G2/G3 from G1 pancreatic neuroendocrine tumors: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_002",
+      "question": "Does adding dual immune checkpoint blockade improve clinical outcomes compared to anti-PD-1 monotherapy in previously treated advanced squamous non-small cell lung cancer?",
+      "relevant_pmcids": [
+        "PMC8283667"
+      ],
+      "source_title": "Nivolumab Plus Ipilimumab vs Nivolumab for Previously Treated Patients With Stage IV Squamous Cell Lung Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_003",
+      "question": "What is the long-term survival impact of adding neoadjuvant chemoradiotherapy before surgical resection in patients with locally advanced esophageal squamous cell carcinoma?",
+      "relevant_pmcids": [
+        "PMC8223138"
+      ],
+      "source_title": "Long-term Efficacy of Neoadjuvant Chemoradiotherapy Plus Surgery for the Treatment of Locally Advanced Esophageal Squamous Cell Carcinoma",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_004",
+      "question": "What is the diagnostic accuracy of circulating microRNA-21 as a non-invasive screening biomarker for esophageal carcinoma in Asian patient populations?",
+      "relevant_pmcids": [
+        "PMC9528905"
+      ],
+      "source_title": "MicroRNA-21 as a potential biomarker for detecting esophageal carcinoma in Asian populations: a meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_005",
+      "question": "Does a mobile digital support tool improve health-related quality of life and reduce psychological distress in patients undergoing breast cancer treatment?",
+      "relevant_pmcids": [
+        "PMC12507968"
+      ],
+      "source_title": "Effect of a digital tool on breast cancer specific health-related quality of life and psychological distress: secondary results from the ADAPT study",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_006",
+      "question": "Does a structured post-surgical home nursing intervention reduce symptom severity and caregiver burden in patients recovering from primary brain tumor resection?",
+      "relevant_pmcids": [
+        "PMC11026272"
+      ],
+      "source_title": "Effects of dependent care theory-based post-surgical home care intervention on self-care, symptoms, and caregiver burden in patients with primary brain tumor and their caregivers: a randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_007",
+      "question": "Does adherence to a Mediterranean or healthy dietary pattern decrease the incidence and overall risk of developing gastric cancer?",
+      "relevant_pmcids": [
+        "PMC11781554"
+      ],
+      "source_title": "Association between priori and posteriori dietary patterns and gastric cancer risk: an updated systematic review and meta-analysis of observational studies",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_008",
+      "question": "Is topical methylene blue effective for controlling severe oral mucositis pain in cancer patients undergoing radiation or chemotherapy?",
+      "relevant_pmcids": [
+        "PMC9632023"
+      ],
+      "source_title": "Methylene blue for intractable pain from oral mucositis related to cancer treatment: a randomized phase 2 clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_009",
+      "question": "How does the expression of hypoxia-inducible factor alpha subunits correlate with clinicopathological characteristics and aggressiveness in papillary thyroid carcinoma?",
+      "relevant_pmcids": [
+        "PMC10270558"
+      ],
+      "source_title": "The association of hypoxia-inducible factor-1\u03b1 and hypoxia-inducible factor-2\u03b1 protein expression with clinicopathological characteristics in papillary thyroid carcinoma: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_010",
+      "question": "Does a post-operative supervised exercise program improve quality of life and functional recovery in patients undergoing surgical resection for esophageal cancer?",
+      "relevant_pmcids": [
+        "PMC10364897"
+      ],
+      "source_title": "Supervised exercise after oesophageal cancer surgery: the PERFECT multicentre randomized clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_011",
+      "question": "For laparoscopic colorectal surgery, does a lateral quadratus lumborum block reduce intraoperative remifentanil compared to a transversus abdominis plane block?",
+      "relevant_pmcids": [
+        "PMC12309112"
+      ],
+      "source_title": "Lateral quadratus lumborum block versus transversus abdominis plane block for perioperative analgesia in patients undergoing laparoscopic colorectal cancer surgery: a randomized, controlled clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_012",
+      "question": "In first-line PD-L1-positive advanced gastric adenocarcinoma, is pembrolizumab associated with similar quality of life compared to chemotherapy?",
+      "relevant_pmcids": [
+        "PMC8358416"
+      ],
+      "source_title": "Quality of life with first-line pembrolizumab for PD-L1\u2013positive advanced gastric/gastroesophageal junction adenocarcinoma: results from the randomised phase III KEYNOTE-062 study",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_013",
+      "question": "For early bladder cancer recurrence after TURBT, is MRI more accurate than MDCT in detecting recurrence and differentiating benign changes?",
+      "relevant_pmcids": [
+        "PMC9844434"
+      ],
+      "source_title": "Feasibility of Early Evaluation for the Recurrence of Bladder Cancer after Trans-Urethral Resection: A Comparison between Magnetic Resonance Imaging and Multidetector Computed Tomography",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_014",
+      "question": "Does exergame rehabilitation improve quality of life, particularly physical function, for cancer patients recovering from abdominal surgery?",
+      "relevant_pmcids": [
+        "PMC11564271"
+      ],
+      "source_title": "The effect of exergame rehabilitation on the quality of life of cancer patients undergoing abdominal surgery: a randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_015",
+      "question": "Can a digital information tool reduce distress and enhance understanding for women with breast cancer undergoing radiotherapy?",
+      "relevant_pmcids": [
+        "PMC12343666"
+      ],
+      "source_title": "Factors associated with distress over time in women with breast cancer undergoing radiotherapy: insights from a pilot study assessing a digital information tool",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_016",
+      "question": "Does bundling colorectal cancer screening outreach with social risk screening increase cancer screening rates in FQHC populations?",
+      "relevant_pmcids": [
+        "PMC11116362"
+      ],
+      "source_title": "Bundling Colorectal Cancer Screening Outreach with Screening for Social Risk in Federally Qualified Health Centers: A Stepped-Wedge Implementation-Effectiveness Study",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_017",
+      "question": "For NSCLC with malignant pleural effusion, is intrapleural endostar combined with cisplatin effective and safe?",
+      "relevant_pmcids": [
+        "PMC9803422"
+      ],
+      "source_title": "Efficacy and safety of endostar combined with cisplatin in treatment of non-small cell lung cancer with malignant pleural effusion: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_018",
+      "question": "For elderly resected NSCLC patients, does alternate-day S-1 reduce GI side effects while maintaining efficacy compared to daily S-1?",
+      "relevant_pmcids": [
+        "PMC10198543"
+      ],
+      "source_title": "Randomized phase II study of daily versus alternate-day administrations of S-1 for the elderly patients with completely resected pathological stage IA (tumor diameter > 2 cm)\u2014IIIA of non-small cell lung cancer: Setouchi Lung Cancer Group Study 1201",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_019",
+      "question": "In anxious/depressed adults with advanced cancer, does a remote Valued Living intervention improve advance care planning and well-being?",
+      "relevant_pmcids": [
+        "PMC12997518"
+      ],
+      "source_title": "Valued Living intervention to increase advance care planning and well\u2010being in depressed and anxious adults with advanced cancer: Randomized trial in community oncology clinics",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_020",
+      "question": "What strategies are effective for implementing an electronic patient-reported outcomes-based symptom management program across multiple cancer centers?",
+      "relevant_pmcids": [
+        "PMC11558981"
+      ],
+      "source_title": "Strategies for implementing an electronic patient-reported outcomes-based symptom management program across six cancer centers",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_021",
+      "question": "In patients with advanced hepatocellular carcinoma, does adding anlotinib to combination systemic therapy improve overall survival and response rates?",
+      "relevant_pmcids": [
+        "PMC12536109"
+      ],
+      "source_title": "The Efficacy and Safety of Anlotinib Combination Therapy for Advanced Hepatocellular Carcinoma: A Systematic Review and Meta-Analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_022",
+      "question": "Does adjuvant chemotherapy improve overall survival in patients with node-positive invasive intraductal papillary mucinous neoplasms following surgical resection?",
+      "relevant_pmcids": [
+        "PMC8677688"
+      ],
+      "source_title": "Adjuvant Chemotherapy in the Treatment of Intraductal Papillary Mucinous Neoplasms of the Pancreas: Systematic Review and Meta-Analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_023",
+      "question": "How do different paclitaxel-based chemoradiotherapy combinations compare regarding survival and toxicity in locally advanced esophageal squamous cell carcinoma?",
+      "relevant_pmcids": [
+        "PMC8861838"
+      ],
+      "source_title": "Comparison of 3 Paclitaxel-Based Chemoradiotherapy Regimens for Patients With Locally Advanced Esophageal Squamous Cell Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_024",
+      "question": "Does proton beam radiation therapy provide better tumor control or hearing preservation than stereotactic radiosurgery in patients with vestibular schwannomas?",
+      "relevant_pmcids": [
+        "PMC10319703"
+      ],
+      "source_title": "Proton beam radiation therapy for vestibular schwannomas-tumor control and hearing preservation rates: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_025",
+      "question": "What patient and laboratory risk factors increase the incidence of catheter-related venous thrombosis in individuals with breast cancer?",
+      "relevant_pmcids": [
+        "PMC11322883"
+      ],
+      "source_title": "Incidence and risk factors of PICC-related thrombosis in breast cancer: a meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_026",
+      "question": "Does stereotactic body radiotherapy improve toxicity and patient-reported outcomes compared to conventionally fractionated radiation in localized prostate cancer?",
+      "relevant_pmcids": [
+        "PMC8774487"
+      ],
+      "source_title": "Prospective Randomized Phase II Study of Stereotactic Body Radiotherapy (SBRT) vs. Conventional Fractionated Radiotherapy (CFRT) for Chinese Patients with Early-Stage Localized Prostate Cancer  \u2020",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_027",
+      "question": "How do non-embolization locoregional therapies compare to transarterial embolization techniques in improving outcomes for localized hepatocellular carcinoma?",
+      "relevant_pmcids": [
+        "PMC12527482"
+      ],
+      "source_title": "Locoregional Therapies for Hepatocellular Carcinoma",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_028",
+      "question": "Which clinical characteristics and histological response patterns predict local recurrence and overall disease progression in patients treated for osteosarcoma?",
+      "relevant_pmcids": [
+        "PMC8900028"
+      ],
+      "source_title": "Disease progression in osteosarcoma: a multistate model for the EURAMOS-1 (European and American Osteosarcoma Study) randomised clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_029",
+      "question": "Is integrating community health workers into collaborative care models effective for remote pain management in patients undergoing cancer treatment?",
+      "relevant_pmcids": [
+        "PMC12248872"
+      ],
+      "source_title": "The role of Community Health Workers in a Collaborative Care Management Intervention for Cancer Pain Management: a feasibility study for a randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_030",
+      "question": "In early-stage breast cancer, does hypofractionated whole-breast irradiation with intraoperative electron boost show comparable toxicity to conventional whole-breast radiation?",
+      "relevant_pmcids": [
+        "PMC8552001"
+      ],
+      "source_title": "Outcome of hypofractionated breast irradiation and intraoperative electron boost in early breast cancer: A randomized non\u2010inferiority clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_031",
+      "question": "Does enzalutamide improve survival and delay disease progression in Asian men with chemotherapy-na\u00efve metastatic castration-resistant prostate cancer?",
+      "relevant_pmcids": [
+        "PMC9123068"
+      ],
+      "source_title": "Enzalutamide in Chemotherapy-Na\u00efve Metastatic Castration-Resistant Prostate Cancer: An Asian Multiregional, Randomized Study",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_032",
+      "question": "Is the denosumab biosimilar QL1206 as effective and safe as denosumab for patients with bone metastases from solid tumors?",
+      "relevant_pmcids": [
+        "PMC9971153"
+      ],
+      "source_title": "Efficacy and Safety of Denosumab Biosimilar QL1206 Versus Denosumab in Patients with Bone Metastases from Solid Tumors: A Randomized Phase III Trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_033",
+      "question": "What is the prognostic impact of surgery and chemotherapy on survival outcomes for patients diagnosed with small cell breast carcinoma?",
+      "relevant_pmcids": [
+        "PMC9013885"
+      ],
+      "source_title": "Epidemiology, Treatment and Prognosis Analysis of Small Cell Breast Carcinoma: A Population-Based Study",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_034",
+      "question": "Does combining case-based learning with multidisciplinary team teaching improve educational outcomes for students in liver cancer training?",
+      "relevant_pmcids": [
+        "PMC13188650"
+      ],
+      "source_title": "CBL combined with MDT mode in clinical teaching of liver cancer: a randomized controlled study",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_035",
+      "question": "Does a peer support intervention improve self-efficacy in young adult cancer survivors compared to usual care?",
+      "relevant_pmcids": [
+        "PMC12105318"
+      ],
+      "source_title": "Peer2Me - impact of peer support on self-efficacy in young adult cancer survivors (YA-CS): findings from a comprehensive cohort design",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_036",
+      "question": "Does coenzyme Q10 at 300 mg/day alter doxorubicin pharmacokinetics or tolerability in breast cancer patients?",
+      "relevant_pmcids": [
+        "PMC12638730"
+      ],
+      "source_title": "Phase I Randomized, Placebo-Controlled, Cross-Over Dose-Finding Study of Coenzyme Q10 on Doxorubicin Pharmacokinetics during Breast Cancer Treatment",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_037",
+      "question": "What are the comparative efficacy and toxicity profiles of different local salvage therapies for radiorecurrent prostate cancer?",
+      "relevant_pmcids": [
+        "PMC10262981"
+      ],
+      "source_title": "A Systematic Review and Meta-analysis of Local Salvage Therapies After Radiotherapy for Prostate Cancer (MASTER)",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_038",
+      "question": "Can moderate strength training combined with whole-body vibration prevent chemotherapy-induced peripheral neuropathy in breast cancer patients?",
+      "relevant_pmcids": [
+        "PMC12537586"
+      ],
+      "source_title": "Effects on chemotherapy-induced peripheral neuropathy by moderate strength training in combination with whole-body vibration in breast cancer patients",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_039",
+      "question": "Is an increased Controlling Nutritional Status (CONUT) score associated with poorer prognosis in patients with gynecological cancer?",
+      "relevant_pmcids": [
+        "PMC10329389"
+      ],
+      "source_title": "Prognostic and clinicopathological impacts of Controlling Nutritional Status (CONUT) score on patients with gynecological cancer: a meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_040",
+      "question": "Does adding carboplatin to standard neoadjuvant chemotherapy improve pathological complete response rates in triple-negative breast cancer?",
+      "relevant_pmcids": [
+        "PMC10504209"
+      ],
+      "source_title": "Neoadjuvant carboplatin in triple-negative breast cancer: results from NACATRINE, a randomized phase II clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_041",
+      "question": "Does a mailed training intervention for primary care physicians increase FOBT prescription for colorectal cancer screening?",
+      "relevant_pmcids": [
+        "PMC13249137"
+      ],
+      "source_title": "Promoting shared decision-making in colorectal cancer screening in primary care: A cluster randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_042",
+      "question": "What are the barriers to implementing digital nutrition care for head and neck cancer patients during treatment?",
+      "relevant_pmcids": [
+        "PMC12522967"
+      ],
+      "source_title": "Experiences with nutritional follow-up and barriers and opportunities of implementing digital seamless nutrition care in the head and neck cancer treatment course: a qualitative study from patient, family caregiver, and healthcare professional perspectives",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_043",
+      "question": "Can C-reactive protein predict survival outcomes in patients with advanced urothelial carcinoma treated with immunotherapy?",
+      "relevant_pmcids": [
+        "PMC11219184"
+      ],
+      "source_title": "C-reactive protein (CRP) as a prognostic biomarker in patients with urothelial carcinoma: A systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_044",
+      "question": "Does adding HIPEC to secondary cytoreductive surgery improve survival for platinum-sensitive recurrent ovarian cancer patients?",
+      "relevant_pmcids": [
+        "PMC12604396"
+      ],
+      "source_title": "Efficacy and safety of secondary cytoreductive surgery with hyperthermic intraperitoneal chemotherapy in platinum-sensitive recurrent ovarian cancer: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_045",
+      "question": "Does pranayama breathing exercise reduce chemotherapy-induced symptom burden in women with breast cancer?",
+      "relevant_pmcids": [
+        "PMC12228286"
+      ],
+      "source_title": "The effects of Pranayama breathing exercise on symptom burden among women with breast cancer undergoing chemotherapy: a randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_046",
+      "question": "Is it feasible and worthwhile to include environmental impacts in the cost analysis of melanoma surveillance?",
+      "relevant_pmcids": [
+        "PMC9834124"
+      ],
+      "source_title": "Exploring the Integration of Environmental Impacts in the Cost Analysis of the Pilot MEL-SELF Trial of Patient-Led Melanoma Surveillance",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_047",
+      "question": "Is pretreatment modified Glasgow Prognostic Score a reliable prognostic indicator for patients with small cell lung cancer?",
+      "relevant_pmcids": [
+        "PMC10637526"
+      ],
+      "source_title": "Prognostic value of pretreatment modified Glasgow Prognostic Score in small cell lung cancer: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_048",
+      "question": "Does a DVD combined with patient navigation increase colorectal cancer screening uptake in rural women?",
+      "relevant_pmcids": [
+        "PMC11341775"
+      ],
+      "source_title": "Comparative effectiveness of two interventions to increase colorectal cancer screening among females living in the rural Midwest",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_049",
+      "question": "Is photobiomodulation effective for preventing or treating methotrexate-induced oral mucositis in pediatric hematologic cancer patients?",
+      "relevant_pmcids": [
+        "PMC12049046"
+      ],
+      "source_title": "Efficacy of photobiomodulation for the prevention and treatment of chemotherapy-induced oral mucositis in pediatric patients with hematologic cancers: a randomized clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_050",
+      "question": "Do educational and supportive programs improve preparedness to care for family caregivers of cancer patients?",
+      "relevant_pmcids": [
+        "PMC9028302"
+      ],
+      "source_title": "Interventions to Improve the Preparedness to Care for Family Caregivers of Cancer Patients",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_051",
+      "question": "Does chemoradiotherapy increase sensorineural hearing loss risk more than radiotherapy alone in head and neck cancer patients?",
+      "relevant_pmcids": [
+        "PMC12895599"
+      ],
+      "source_title": "Comparative analysis of prevalences of sensorineural hearing loss from chemoradiotherapy versus radiotherapy in head and neck cancer patients: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_052",
+      "question": "Does physical activity improve health-related quality of life or reduce fatigue in colorectal cancer survivors?",
+      "relevant_pmcids": [
+        "PMC11952013"
+      ],
+      "source_title": "The role of physical activity, sedentary behaviour, diet, adiposity and body composition on health-related quality of life and cancer-related fatigue after diagnosis of colorectal cancer: a Global Cancer Update Programme (CUP Global) systematic literature review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_053",
+      "question": "Which specific gene alterations are associated with worse overall or disease-free survival in colorectal cancer patients?",
+      "relevant_pmcids": [
+        "PMC9402361"
+      ],
+      "source_title": "Association of  \u03b2-Catenin ,  APC ,  SMAD3/4 ,  Tp53 , and  Cyclin D1  Genes in Colorectal Cancer: A Systematic Review and Meta-Analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_054",
+      "question": "Do preventive swallowing exercises during head and neck cancer radiotherapy improve swallowing safety or quality of life outcomes?",
+      "relevant_pmcids": [
+        "PMC9345844"
+      ],
+      "source_title": "Swallowing Exercise During Head and Neck Cancer Treatment: Results of a Randomized Trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_055",
+      "question": "Can perioperative pregabalin and esketamine combination therapy prevent chronic pain after breast cancer surgery?",
+      "relevant_pmcids": [
+        "PMC10259464"
+      ],
+      "source_title": "Perioperative Administration of Pregabalin and Esketamine to Prevent Chronic Pain After Breast Cancer Surgery: A Randomized Controlled Trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_056",
+      "question": "Is laparoscopic distal gastrectomy feasible and safe for clinical T4a gastric cancer compared to open surgery?",
+      "relevant_pmcids": [
+        "PMC12613089"
+      ],
+      "source_title": "Laparoscopic vs Open Distal Gastrectomy With D2 Lymphadenectomy for Clinical T4a Gastric Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_057",
+      "question": "What patient and clinical factors predict overall survival in patients with limited-stage small cell lung cancer?",
+      "relevant_pmcids": [
+        "PMC11581554"
+      ],
+      "source_title": "Prognostic Factors in Limited-Stage Small Cell Lung Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_058",
+      "question": "What cancer treatments significantly increase the risk of fertility impairment in female childhood and adolescent survivors?",
+      "relevant_pmcids": [
+        "PMC13088620"
+      ],
+      "source_title": "Impact of cancer treatment on fertility in female childhood and adolescent cancer survivors: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_059",
+      "question": "Can an intelligent image diagnosis system improve quality of life for advanced lung cancer patients receiving nursing intervention?",
+      "relevant_pmcids": [
+        "PMC8608502"
+      ],
+      "source_title": "Analysis of Lung Imaging Intelligent Diagnosis System for Nursing Intervention of Lung Cancer Patients' Quality of Life",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_060",
+      "question": "Which immunotherapy-based combination offers superior overall survival for first-line metastatic urothelial cancer patients?",
+      "relevant_pmcids": [
+        "PMC11352654"
+      ],
+      "source_title": "Immunotherapy-Based Combinations in First-Line Urothelial Cancer: A Systematic Review and Individual Patient Data (IPD) Meta-Analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_061",
+      "question": "Does oral methylcobalamin reduce severe hand-foot syndrome in HER2 negative early breast cancer patients receiving adjuvant capecitabine?",
+      "relevant_pmcids": [
+        "PMC12423938"
+      ],
+      "source_title": "Effect of methylcobalamin on capecitabine induced hand-foot syndrome in patients with HER2 negative early breast cancer: multicentre, double blind, randomised, placebo controlled, phase 3 trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_062",
+      "question": "What factors influence total hospital expenses for breast cancer surgery, and which model best predicts these costs?",
+      "relevant_pmcids": [
+        "PMC8667393"
+      ],
+      "source_title": "Prediction of total hospital expenses of patients undergoing breast cancer surgery in Shanghai, China by comparing three models",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_063",
+      "question": "Is modified gasless trans-axillary endoscopic thyroidectomy superior to traditional for papillary thyroid microcarcinoma regarding outcomes and scars?",
+      "relevant_pmcids": [
+        "PMC10469731"
+      ],
+      "source_title": "Comparison of health\u2010related quality of life and cosmetic outcome between traditional gasless trans\u2010axillary endoscopic thyroidectomy and modified gasless trans\u2010axillary endoscopic thyroidectomy for patients with papillary thyroid microcarcinoma",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_064",
+      "question": "Can propolis supplementation reduce serum levels of inflammatory markers like IL-6, CRP, and TNF-\u03b1?",
+      "relevant_pmcids": [
+        "PMC11316998"
+      ],
+      "source_title": "Propolis supplementation can reduce serum level of interleukin-6, C-reactive protein, and tumor necrosis factor-\u03b1: an updated systematic review and dose-response meta-analysis on randomized clinical trials",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_065",
+      "question": "Does a Noddings\u2019 caring theory-based intervention improve death coping and psychological well-being in advanced lung cancer patients?",
+      "relevant_pmcids": [
+        "PMC13156160"
+      ],
+      "source_title": "A Noddings\u2019 caring theory-based intervention to enhance coping with death competence in advanced lung cancer patients: a randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_066",
+      "question": "Is adherence to multiple healthy lifestyle factors associated with improved psychosocial outcomes among cancer survivors?",
+      "relevant_pmcids": [
+        "PMC13144231"
+      ],
+      "source_title": "Combined healthy lifestyle factors and psychosocial outcomes among cancer survivors: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_067",
+      "question": "Do early-onset oesophageal adenocarcinoma patients have different survival outcomes compared to older patients?",
+      "relevant_pmcids": [
+        "PMC11525870"
+      ],
+      "source_title": "Survival outcomes in early-onset oesophageal adenocarcinoma patients: A systematic review and meta-analyses",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_068",
+      "question": "Is intraoperative radiotherapy boost with whole breast irradiation superior to conventional radiotherapy for early-stage breast cancer survival?",
+      "relevant_pmcids": [
+        "PMC10625949"
+      ],
+      "source_title": "Intraoperative Radiotherapy as a Tumour-Bed Boost Combined with Whole Breast Irradiation Versus Conventional Radiotherapy in Patients with Early-Stage Breast Cancer: A Systematic Review and Meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_069",
+      "question": "Which dyspnea scales are valid and concordant for assessing breathlessness in operable early-stage lung cancer patients?",
+      "relevant_pmcids": [
+        "PMC12048451"
+      ],
+      "source_title": "Modified Borg Scale (mBorg), the Numerical Rating Scale (NRS), and the Dyspnea- 12 Scale (D- 12): cross-scale comparison assessing the development of dyspnea in early-stage lung cancer patients",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_070",
+      "question": "Can a radiomics nomogram predict overall survival in patients with combined hepatocellular carcinoma and cholangiocarcinoma after resection?",
+      "relevant_pmcids": [
+        "PMC8613648"
+      ],
+      "source_title": "Comprehensive radiomics nomogram for predicting survival of patients with combined hepatocellular carcinoma and cholangiocarcinoma",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_071",
+      "question": "What clinical factors predict lung metastasis or overall survival in young patients diagnosed with osteosarcoma?",
+      "relevant_pmcids": [
+        "PMC9626197"
+      ],
+      "source_title": "Development and Validation of Nomograms to Assess Risk Factors and Overall Survival Prediction for Lung Metastasis in Young Patients with Osteosarcoma: A SEER-Based Study",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_072",
+      "question": "Does training healthcare providers in Kaposi Sarcoma diagnosis and care improve patient retention in care and provider confidence?",
+      "relevant_pmcids": [
+        "PMC9418419"
+      ],
+      "source_title": "Evaluation of a training intervention to improve cancer care in Zimbabwe: Strategies to Improve Kaposi Sarcoma Outcomes (SIKO), a prospective community\u2010based stepped\u2010wedge cluster randomized trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_073",
+      "question": "Does cognitive-behavioral intervention reduce anxiety and depression and improve quality of life in children with hematological cancer?",
+      "relevant_pmcids": [
+        "PMC11743426"
+      ],
+      "source_title": "Cognitive\u2010Behavioral Intervention for Children With Hematological Cancer Receiving Chemotherapy: A Randomized Controlled Trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_074",
+      "question": "Does perioperative infusional 5-FU improve overall or disease-free survival in patients with resected Dukes' B2, B3, or C colon cancer?",
+      "relevant_pmcids": [
+        "PMC9807536"
+      ],
+      "source_title": "Phase III Prospectively Randomized Trial of Perioperative 5-FU After Curative Resection for Colon Cancer: An Intergroup Trial of the ECOG-ACRIN Cancer Research Group (E1292)",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_075",
+      "question": "Does radical lymphadenectomy improve overall survival and safety for colorectal cancer patients with para-aortic lymph node metastasis?",
+      "relevant_pmcids": [
+        "PMC9107112"
+      ],
+      "source_title": "Effect of radical lymphadenectomy in colorectal cancer with para-aortic lymph node metastasis: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_076",
+      "question": "In rectal cancer patients, does lateral lymph node metastasis on pretreatment MRI predict local recurrence after neoadjuvant chemoradiation and surgery?",
+      "relevant_pmcids": [
+        "PMC11737601"
+      ],
+      "source_title": "Prognostic Value of Lateral Lymph Node Metastasis in Pretreatment MRI for Rectal Cancer in Patients Undergoing Neoadjuvant Chemoradiation followed by Surgical Resection without Lateral Lymph Node Dissection: A Systemic Review and Meta-Analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_077",
+      "question": "Does a customizable educational brochure improve breast cancer patients' knowledge about their diagnosis and treatment compared to a standard brochure?",
+      "relevant_pmcids": [
+        "PMC10417173"
+      ],
+      "source_title": "Effect of receiving a customizable brochure on breast cancer patients' knowledge about their diagnosis and treatment: A randomized clinical trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_078",
+      "question": "What is the clinicopathologic and prognostic relevance of EpCAM and CD44 expression in patients with pancreatic cancer?",
+      "relevant_pmcids": [
+        "PMC12392593"
+      ],
+      "source_title": "Clinicopathologic relevance of EpCAM and CD44 in pancreatic cancer: insights from a meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_079",
+      "question": "How does initial PSA level below 3 ng/mL influence prostate cancer risk and optimal screening intervals in men?",
+      "relevant_pmcids": [
+        "PMC10087780"
+      ],
+      "source_title": "Prostate cancer incidence in men with prostate\u2010specific antigen below 3\u00a0ng/ mL : The Finnish Randomized Study of Screening for Prostate Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_080",
+      "question": "Does omitting axillary surgery in early breast cancer patients with negative lymph nodes affect recurrence, overall, or disease-free survival?",
+      "relevant_pmcids": [
+        "PMC12999590"
+      ],
+      "source_title": "Omission of axillary surgery in early breast cancer with negative lymph nodes: a systematic review and meta-analysis of randomized clinical trials",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_081",
+      "question": "Can sleep behavioral therapy effectively reduce headache burden in breast cancer survivors?",
+      "relevant_pmcids": [
+        "PMC8578351"
+      ],
+      "source_title": "Headache Outcomes of a Sleep Behavioral Intervention in Breast Cancer Survivors: Secondary Analysis of a Randomized Clinical Trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_082",
+      "question": "Is personalized breast cancer risk estimation, including breast density and PRS, well-accepted and psychologically safe for women?",
+      "relevant_pmcids": [
+        "PMC12342814"
+      ],
+      "source_title": "A randomized study of 2 risk assessment models for individualized breast cancer risk estimation",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_083",
+      "question": "Can telehealth improve quality of life and alleviate symptom burden for advanced cancer patients receiving palliative care?",
+      "relevant_pmcids": [
+        "PMC13136543"
+      ],
+      "source_title": "Effectiveness of and implementation requirements for telehealth in palliative care patients with advanced cancer: A systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_084",
+      "question": "Does SIB-RT with concurrent oral S-1 chemotherapy improve survival for elderly patients with inoperable esophageal squamous cell carcinoma?",
+      "relevant_pmcids": [
+        "PMC10193185"
+      ],
+      "source_title": "Effectiveness of S-1\u2013Based Chemoradiotherapy in Patients 70 Years and Older With Esophageal Squamous Cell Carcinoma",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_085",
+      "question": "Are tyrosine kinase inhibitors effective in improving outcomes for patients with advanced or metastatic sarcomas after prior chemotherapy?",
+      "relevant_pmcids": [
+        "PMC10939701"
+      ],
+      "source_title": "Efficacy of tyrosine kinase inhibitors in patients with advanced or metastatic sarcomas after prior chemotherapy: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_086",
+      "question": "Can massage therapy effectively relieve cancer pain in patients with hematological malignancies, breast cancer, or digestive system cancers?",
+      "relevant_pmcids": [
+        "PMC10328622"
+      ],
+      "source_title": "Massage therapy can effectively relieve cancer pain: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_087",
+      "question": "Do PET-derived parameters predict overall and biochemical progression-free survival in metastatic castration-resistant prostate cancer patients on ARTA?",
+      "relevant_pmcids": [
+        "PMC11090858"
+      ],
+      "source_title": "A prospective study on the early evaluation of response to androgen receptor-targeted agents with  11 C-Choline,  68 Ga-PSMA, and  18 F-FACBC PET in metastatic castration-resistant prostate cancer: a single-center experience",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_088",
+      "question": "Is a high platelet-to-lymphocyte ratio associated with poor outcomes in breast cancer patients receiving neoadjuvant chemotherapy?",
+      "relevant_pmcids": [
+        "PMC10668253"
+      ],
+      "source_title": "Prognostic significance of platelet-to-lymphocyte ratio (PLR) in patients with breast cancer treated with neoadjuvant chemotherapy: a meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_089",
+      "question": "Can machine learning models accurately predict survival and guide personalized treatment decisions for patients with early-stage hepatocellular carcinoma?",
+      "relevant_pmcids": [
+        "PMC10637529"
+      ],
+      "source_title": "Machine learning methods for accurately predicting survival and guiding treatment in stage I and II hepatocellular carcinoma",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_090",
+      "question": "Does a home-based exercise and self-management program improve physical function or quality of life after lung cancer resection?",
+      "relevant_pmcids": [
+        "PMC11612835"
+      ],
+      "source_title": "Home-Based Exercise and Self-Management After Lung Cancer Resection",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_091",
+      "question": "Can combined text message and postal reminders improve participation rates in colorectal cancer screening programs?",
+      "relevant_pmcids": [
+        "PMC11736219"
+      ],
+      "source_title": "Text Messaging Versus Postal Reminders to Improve Participation in a Colorectal Cancer Screening Program: Randomized Controlled Trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_092",
+      "question": "Which frailty instruments best predict postoperative complications, readmission, or mortality in cancer patients undergoing surgery?",
+      "relevant_pmcids": [
+        "PMC13281656"
+      ],
+      "source_title": "The predictive value of multidimensional frailty instruments for postoperative adverse outcomes in cancer patients: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_093",
+      "question": "What factors influence peaceful acceptance of illness among older adults living with advanced cancer?",
+      "relevant_pmcids": [
+        "PMC12967279"
+      ],
+      "source_title": "Peaceful Acceptance of Illness Among Older Adults With Advanced Cancer: A Randomized Clinical Trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_094",
+      "question": "Can yoga intervention improve fatigue, pain, sleep disturbance, and quality of life for breast cancer patients on adjuvant chemotherapy?",
+      "relevant_pmcids": [
+        "PMC12990628"
+      ],
+      "source_title": "Yoga intervention on the fatigue-pain-sleep disturbance symptom cluster for breast cancer patients receiving adjuvant chemotherapy: a pilot randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_095",
+      "question": "What are the patient-reported tolerability and symptomatic adverse events of adavosertib combined with gemcitabine in ovarian cancer?",
+      "relevant_pmcids": [
+        "PMC10731422"
+      ],
+      "source_title": "Patient self-reporting of tolerability using PRO-CTCAE in a randomized double-blind, placebo-controlled phase II trial comparing gemcitabine in combination with adavosertib or placebo in patients with platinum resistant or refractory epithelial ovarian carcinoma",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_096",
+      "question": "Does negative pressure wound therapy reduce surgical site infections and other complications compared to conventional care in cancer surgical wounds?",
+      "relevant_pmcids": [
+        "PMC9493220"
+      ],
+      "source_title": "Negative pressure wound therapy versus conventional wound care in cancer surgical wounds: A meta\u2010analysis of observational studies and randomised controlled trials",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_097",
+      "question": "Does adding dexmedetomidine to ropivacaine for TAP block reduce perioperative neurocognitive disorders after colorectal cancer surgery?",
+      "relevant_pmcids": [
+        "PMC11127451"
+      ],
+      "source_title": "The influence of dexmedetomidine added to ropivacaine for transversus abdominis plane block on perioperative neurocognitive disorders after radical colorectal cancer surgery: randomized, double-blind, controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_098",
+      "question": "Does developing depression or using prophylactic antidepressants impact overall survival in head and neck cancer patients?",
+      "relevant_pmcids": [
+        "PMC10321851"
+      ],
+      "source_title": "De-Novo Depression, Prophylactic Antidepressants and Survival in Patients with Head and Neck Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_099",
+      "question": "Is pretreatment skeletal muscle index a reliable prognostic factor for survival in patients with pancreatic carcinoma?",
+      "relevant_pmcids": [
+        "PMC10174348"
+      ],
+      "source_title": "Prognostic value of pretreatment skeletal muscle index in pancreatic carcinoma patients: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_100",
+      "question": "What is the incidence of central nervous system metastases in HER2-positive metastatic breast cancer patients receiving trastuzumab?",
+      "relevant_pmcids": [
+        "PMC8341052"
+      ],
+      "source_title": "Incidence of central nervous system metastases in patients with human epidermal growth factor receptor 2-positive metastatic breast cancer treated with trastuzumab: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_101",
+      "question": "Does radioactive iodine therapy increase the risk of secondary hematologic malignancies, particularly leukemia, in differentiated thyroid cancer patients?",
+      "relevant_pmcids": [
+        "PMC12527754"
+      ],
+      "source_title": "Meta-analysis of secondary hematologic malignancy risks following radioactive iodine therapy for differentiated thyroid cancer",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_102",
+      "question": "Does platinum-based adjuvant therapy improve pathologic complete response and recurrence-free survival in triple-negative breast cancer patients?",
+      "relevant_pmcids": [
+        "PMC9601551"
+      ],
+      "source_title": "Platinum-based adjuvant therapy was efficient for triple-negative breast cancer: a meta-analysis from randomized controlled trials",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_103",
+      "question": "Does adding ramucirumab to erlotinib improve progression-free survival in untreated EGFR-mutated metastatic non-small cell lung cancer?",
+      "relevant_pmcids": [
+        "PMC8763844"
+      ],
+      "source_title": "RELAY, Ramucirumab Plus Erlotinib Versus Placebo Plus Erlotinib in Patients with Untreated, Epidermal Growth Factor Receptor Mutation-Positive, Metastatic Non-Small-Cell Lung Cancer: Safety Profile and Manageability",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_104",
+      "question": "Is pathologic complete response a reliable surrogate endpoint for disease-free or overall survival in rectal cancer patients?",
+      "relevant_pmcids": [
+        "PMC12268488"
+      ],
+      "source_title": "Pathologic Complete Response and Survival in Rectal Cancer",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_105",
+      "question": "Can MRI-radiomics models accurately predict MGMT promoter methylation status in patients with grade IV gliomas for clinical use?",
+      "relevant_pmcids": [
+        "PMC11364578"
+      ],
+      "source_title": "Quality assessment of the MRI-radiomics studies for MGMT promoter methylation prediction in glioma: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_106",
+      "question": "Is fam-trastuzumab deruxtecan-nxki an effective treatment option for heavily pretreated HER2-positive metastatic breast cancer?",
+      "relevant_pmcids": [
+        "PMC8570919"
+      ],
+      "source_title": "FDA Approval Summary: Fam-trastuzumab deruxtecan-nxki for the treatment of unresectable or metastatic HER2-positive breast cancer.",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_107",
+      "question": "Does abemaciclib improve survival outcomes compared to chemotherapy in previously treated metastatic pancreatic adenocarcinoma?",
+      "relevant_pmcids": [
+        "PMC10652308"
+      ],
+      "source_title": "Efficacy and safety of abemaciclib alone and with  PI3K / mTOR  inhibitor  LY3023414  or galunisertib versus chemotherapy in previously treated metastatic pancreatic adenocarcinoma: A randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_108",
+      "question": "Does neoadjuvant dual HER2 blockade with trastuzumab and lapatinib improve survival in high-risk HER2-positive early breast cancer?",
+      "relevant_pmcids": [
+        "PMC8917305"
+      ],
+      "source_title": "Survival after neoadjuvant therapy with trastuzumab\u2013lapatinib and\u00a0chemotherapy in patients with HER2-positive early breast cancer: a\u00a0meta-analysis of randomized trials",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_109",
+      "question": "For thoracoscopic lung cancer resection, does perineural dexamethasone in TTPB provide superior analgesia compared to intravenous administration?",
+      "relevant_pmcids": [
+        "PMC12474666"
+      ],
+      "source_title": "Comparison of Postoperative Analgesic Effects of Intravenous versus Perineural Dexamethasone Injection Combined with Ropivacaine in Thoracoscopy-Guided Thoracic Paravertebral Block for Thoracoscopic Radical Lung Cancer Resection: A Prospective Randomized Controlled Trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_110",
+      "question": "How effective is aerobic exercise in reducing depression and anxiety among lung cancer survivors, and what prescription is recommended?",
+      "relevant_pmcids": [
+        "PMC12191834"
+      ],
+      "source_title": "Effects of Exercise on Depression and Anxiety in Lung Cancer Survivors: A Systematic Review and Meta-Analysis of Randomized Controlled Trials",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_111",
+      "question": "What are the optimal methods for prescribing and reporting resistance training adherence in colon cancer patients receiving adjuvant chemotherapy?",
+      "relevant_pmcids": [
+        "PMC11096063"
+      ],
+      "source_title": "Advances in Adherence Reporting of Resistance Training in a Clinical Trial during Adjuvant Chemotherapy for Colon Cancer",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_112",
+      "question": "Does integrating narrative therapy and resilience training improve postoperative recovery and survival in patients undergoing low rectal cancer resection?",
+      "relevant_pmcids": [
+        "PMC12634408"
+      ],
+      "source_title": "Narrative therapy and resilience training improve recovery and survival after intersphincteric resection for low rectal cancer: a randomized trial",
+      "study_type": "rct",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_113",
+      "question": "Can mobile health-guided diet and exercise behavioral interventions improve lifestyle outcomes in patients with chronic lymphocytic leukemia?",
+      "relevant_pmcids": [
+        "PMC11956799"
+      ],
+      "source_title": "Optimization of mHealth behavioral interventions for patients with chronic lymphocytic leukemia: the HEALTH4CLL study",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_114",
+      "question": "How does robotic nipple-sparing mastectomy compare with conventional techniques regarding complication rates and surgical safety in early breast cancer?",
+      "relevant_pmcids": [
+        "PMC13289468"
+      ],
+      "source_title": "Robotic versus conventional nipple-sparing mastectomy in early breast cancer: a systematic review and meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_115",
+      "question": "Does adding dexmedetomidine to ropivacaine in thoracic paravertebral blocks enhance postoperative analgesia following thoracoscopic lung cancer surgery?",
+      "relevant_pmcids": [
+        "PMC12064592"
+      ],
+      "source_title": "Thoracoscopy-guided thoracic paravertebral block using dexmedetomidine in combination with ropivacaine for postoperative analgesia after thoracoscopic radical resection of lung cancer: a randomized controlled trial",
+      "study_type": "rct",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_116",
+      "question": "What are the postoperative risks and recommended surgical strategies for lung cancer resection in patients with underlying usual interstitial pneumonia?",
+      "relevant_pmcids": [
+        "PMC10032402"
+      ],
+      "source_title": "Lung cancer resection in patients with underlying usual interstitial pneumonia: a meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    },
+    {
+      "id": "ret_117",
+      "question": "Can computed tomography radiomics accurately predict epidermal growth factor receptor mutation status in non-small cell lung cancer noninvasively?",
+      "relevant_pmcids": [
+        "PMC10380456"
+      ],
+      "source_title": "Systematic Review, Meta-Analysis and Radiomics Quality Score Assessment of CT Radiomics-Based Models Predicting Tumor EGFR Mutation Status in Patients with Non-Small-Cell Lung Cancer",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_118",
+      "question": "Does volume-based image-guided brachytherapy improve clinical outcomes compared to traditional point-A brachytherapy in cervical cancer treatment?",
+      "relevant_pmcids": [
+        "PMC10042219"
+      ],
+      "source_title": "Point-A vs. volume-based brachytherapy for the treatment of cervix cancer: A meta-analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": false
+    },
+    {
+      "id": "ret_119",
+      "question": "Is elevated expression of long noncoding RNA small nucleolar RNA host genes associated with poor prognosis in hepatocellular carcinoma?",
+      "relevant_pmcids": [
+        "PMC11024508"
+      ],
+      "source_title": "Long noncoding RNA small nucleolar RNA host genes as prognostic molecular biomarkers in hepatocellular carcinoma: A meta\u2010analysis",
+      "study_type": "meta_analysis",
+      "copies_title_5gram": true
+    }
+  ]
+}

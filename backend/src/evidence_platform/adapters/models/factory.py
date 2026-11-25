@@ -53,7 +53,7 @@ def get_llm_client() -> LLMClient:
     provider = settings.LLM_PROVIDER.lower()
     if provider in ("openrouter", "real") and settings.LLM_API_KEY:
         from .openrouter import OpenRouterLLMClient
-        return OpenRouterLLMClient(api_key=settings.LLM_API_KEY, model_name=settings.LLM_MODEL_NAME)
+        return OpenRouterLLMClient(api_key=settings.LLM_API_KEY, model_name=settings.LLM_MODEL_NAME, timeout_s=settings.LLM_TIMEOUT_S)
     return MockLLMClient()
 
 def get_entailment_client() -> EntailmentClient:
@@ -61,7 +61,15 @@ def get_entailment_client() -> EntailmentClient:
     if any(k.startswith("pytest") for k in sys.modules):
         return MockEntailmentClient()
     provider = settings.ENTAILMENT_PROVIDER.lower()
+    if provider in ("gemini-decision", "decision"):
+        from .gemini_decision import GeminiDecisionEntailmentClient
+        fallback = None
+        if settings.LLM_API_KEY:
+            from .openrouter import OpenRouterEntailmentClient
+            fallback = OpenRouterEntailmentClient(api_key=settings.LLM_API_KEY,
+                                                  model_name=settings.ENTAILMENT_MODEL_NAME or settings.LLM_MODEL_NAME)
+        return GeminiDecisionEntailmentClient(fallback=fallback)
     if provider in ("openrouter", "real") and settings.LLM_API_KEY:
         from .openrouter import OpenRouterEntailmentClient
-        return OpenRouterEntailmentClient(api_key=settings.LLM_API_KEY, model_name=settings.LLM_MODEL_NAME)
+        return OpenRouterEntailmentClient(api_key=settings.LLM_API_KEY, model_name=settings.ENTAILMENT_MODEL_NAME or settings.LLM_MODEL_NAME)
     return MockEntailmentClient()

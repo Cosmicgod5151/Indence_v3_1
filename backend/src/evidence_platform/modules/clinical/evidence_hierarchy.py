@@ -84,7 +84,14 @@ class EvidenceHierarchyRanker:
             elif "phase 2" in st_clean or "phase ii" in st_clean or st_clean == "phase_2_trial":
                 rank, weight, label = 3, 1.9, "Phase II Trial"
             elif "rct" in st_clean or "randomized" in st_clean:
-                rank, weight, label = 2, 2.2, "Phase III Randomized Controlled Trial"
+                # Metadata says "RCT" but not the phase: only call it Phase III when
+                # the text says so; phase II randomised trials rank one tier lower.
+                if is_phase3_known or "phase iii" in text_lower or "phase 3" in text_lower:
+                    rank, weight, label = 2, 2.2, "Phase III Randomized Controlled Trial"
+                elif is_phase2_known or "phase ii" in text_lower or "phase 2" in text_lower:
+                    rank, weight, label = 3, 1.9, "Phase II Randomized Trial"
+                else:
+                    rank, weight, label = 2, 2.1, "Randomized Controlled Trial"
             elif "systematic_review" in st_clean or "systematic review" in st_clean:
                 rank, weight, label = 4, 1.7, "Systematic Review"
             elif "meta_analysis" in st_clean or "meta-analysis" in st_clean:
@@ -103,7 +110,11 @@ class EvidenceHierarchyRanker:
                 rank, weight, label = 11, 0.5, "Expert Opinion"
         else:
             # Secondary signal from text-based classification
-            if "nccn" in text_lower or "asco" in text_lower or "esmo" in text_lower or "recommendation" in text_lower:
+            # A guideline needs an explicit guideline signal; the bare word
+            # "recommendation" (common in trial discussions) is not enough.
+            if "guideline" in text_lower and (
+                "recommend" in text_lower or "nccn" in text_lower or "asco" in text_lower or "esmo" in text_lower
+            ):
                 rank, weight, label = 1, 2.5, "Clinical Practice Guidelines"
             elif is_phase3_known or ("randomized" in text_lower or "phase iii" in text_lower or "phase 3" in text_lower) and ("phase iii" in text_lower or "phase 3" in text_lower):
                 rank, weight, label = 2, 2.2, "Phase III Randomized Controlled Trial"

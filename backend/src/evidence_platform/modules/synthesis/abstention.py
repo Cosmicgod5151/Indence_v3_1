@@ -12,6 +12,7 @@ class AbstentionLayer:
     def __init__(self, entailment_client: EntailmentClient, min_entailment_ratio: float = 0.5) -> None:
         self.entailment_client = entailment_client
         self.min_entailment_ratio = min_entailment_ratio
+        self.last_verifier_meta: dict[str, Any] = {}
 
     def population_quality_check(
         self, candidates: list[RetrievalCandidate], intent: Any
@@ -25,8 +26,9 @@ class AbstentionLayer:
 
         all_low_quality = True
         for cand in candidates:
-            meta = getattr(cand, "paper_metadata", None)
-            rank = getattr(meta, "hierarchy_rank", 10) if meta else 10
+            # hierarchy_rank lives on the candidate (set by EvidenceHierarchyRanker),
+            # not on paper_metadata; reading it from metadata always defaulted to 10.
+            rank = getattr(cand, "hierarchy_rank", 11) or 11
             if rank < 9:
                 all_low_quality = False
                 break
@@ -87,9 +89,52 @@ class AbstentionLayer:
             enriched_claim["entailment_status"] = entailment_result
             return enriched_claim
 
-        # Execute all NLI checks concurrently using asyncio.gather
-        logger.info(f"Running parallel NLI verification for {len(direct_claims)} claims...")
-        verified_claims = await asyncio.gather(*[verify_single_claim(c) for c in direct_claims])
+        # Batched NLI: one call verifies every claim when the client supports it;
+        # otherwise fall back to concurrent per-claim checks.
+        detailed_fn = getattr(self.entailment_client, "check_entailment_batch_detailed", None)
+        batch_fn = getattr(self.entailment_client, "check_entailment_batch", None)
+        if detailed_fn is not None:
+            logger.info(f"Running calibrated batched verification for {len(direct_claims)} claims...")
+            pairs, idx_with_premise = [], []
+            for i, claim in enumerate(direct_claims):
+                # Pass the cited passages individually: the verifier sends each one in full.
+                ids = dict.fromkeys(str(e).split(".S")[0] for e in claim.get("evidence_ids", []))
+                passages = [evidence_map[e].text for e in ids if e in evidence_map]
+                if passages:
+                    pairs.append((passages, claim.get("text", "")))
+                    idx_with_premise.append(i)
+            details = await detailed_fn(pairs) if pairs else []
+            by_idx = dict(zip(idx_with_premise, details))
+            verified_claims = []
+            for i, claim in enumerate(direct_claims):
+                enriched = dict(claim)
+                d = by_idx.get(i, {"label": "neutral", "confidence": None, "probabilities": {}})
+                enriched["entailment_status"] = d["label"]
+                enriched["entailment_confidence"] = d.get("confidence")
+                enriched["entailment_probabilities"] = d.get("probabilities")
+                verified_claims.append(enriched)
+        elif batch_fn is not None:
+            logger.info(f"Running batched NLI verification for {len(direct_claims)} claims...")
+            pairs, idx_with_premise = [], []
+            for i, claim in enumerate(direct_claims):
+                premise = " ".join(
+                    evidence_map[e].text for e in claim.get("evidence_ids", []) if e in evidence_map
+                )
+                if premise:
+                    pairs.append((premise, claim.get("text", "")))
+                    idx_with_premise.append(i)
+            labels = await batch_fn(pairs) if pairs else []
+            label_by_idx = dict(zip(idx_with_premise, labels))
+            verified_claims = []
+            for i, claim in enumerate(direct_claims):
+                enriched = dict(claim)
+                enriched["entailment_status"] = label_by_idx.get(i, "neutral")
+                verified_claims.append(enriched)
+        else:
+            logger.info(f"Running parallel NLI verification for {len(direct_claims)} claims...")
+            verified_claims = await asyncio.gather(*[verify_single_claim(c) for c in direct_claims])
+
+        self.last_verifier_meta = dict(getattr(self.entailment_client, "last_meta", {}) or {})
 
         # 3. Calculate grounding ratio
         entailed_count = sum(1 for c in verified_claims if c.get("entailment_status") == "entailment")
@@ -108,16 +153,21 @@ class AbstentionLayer:
                 f"Answer verification failed. Grounded evidence ratio was too low ({grounding_ratio:.1%})."
             )
 
-        # 5. Check if any claim directly contradicts the source text
-        for claim in verified_claims:
-            if claim["entailment_status"] == "contradiction":
-                logger.warning(
-                    f"Direct contradiction detected in claim: '{claim['text']}'. Triggering dynamic abstention."
-                )
+        # 5. Contradicted claims: remove them (they are reported, never displayed as
+        #    part of the answer). Abstain only when contradictions are a substantial
+        #    share of the answer (> 1/3), since that signals an unreliable generation.
+        contradicted = [c for c in verified_claims if c["entailment_status"] == "contradiction"]
+        if contradicted:
+            logger.warning("%d contradicted claim(s) removed by verification.", len(contradicted))
+            if len(contradicted) / len(verified_claims) > 1 / 3:
                 return (
                     "insufficient_evidence",
                     [],
-                    "Answer verification failed due to direct contradiction detected in generated claims."
+                    f"Answer verification failed: {len(contradicted)} of {len(verified_claims)} generated claims "
+                    "contradict their own cited sources."
                 )
+            for c in verified_claims:
+                if c["entailment_status"] == "contradiction":
+                    c["removed_by_verification"] = True
 
         return status, list(verified_claims), abstention_reason

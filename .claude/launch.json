@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "indence-backend",
+      "runtimeExecutable": "backend\\venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "--app-dir", "backend/src", "evidence_platform.app:app", "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "indence-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "start", "--", "-p", "3000"],
+      "port": 3000
+    }
+  ]
+}

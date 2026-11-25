@@ -1,0 +1,1184 @@
+{
+  "generated_at": "2026-11-25T03:06:19",
+  "extraction_model": "gemini:gemini-flash-lite-latest,gemini:gemma-4-26b-a4b-it",
+  "summary": {
+    "n_cases": 8,
+    "n_gold_facts": 85,
+    "llm_extraction": {
+      "gold_recall_micro": 0.518,
+      "traceability_micro": 1.0,
+      "facts_dropped": 0,
+      "facts_verified": 55
+    },
+    "regex_fallback": {
+      "gold_recall_micro": 0.518,
+      "traceability_micro": 1.0,
+      "facts_dropped": 0,
+      "facts_verified": 55
+    },
+    "conflict_detection": [
+      false
+    ],
+    "applicability": {
+      "general_mean_of_means": 0.704,
+      "case_aware_mean_of_means": 0.878,
+      "general_different_population_total": 19,
+      "case_different_population_total": 6,
+      "cases_improved": 7
+    }
+  },
+  "rows": [
+    {
+      "id": "case_01_nsclc_egfr",
+      "n_gold": 13,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 11,
+        "verified": 11,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 10,
+        "gold_recall": 0.769,
+        "missed": [
+          "metastatic_site:liver",
+          "metastatic_site:brain",
+          "comorbidity:hypothyroidism"
+        ],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "lung adenocarcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "lung adenocarcinoma",
+          "start": 66,
+          "end": 85,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG performance status 1",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG performance status 1",
+          "start": 328,
+          "end": 353,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "histology",
+          "value": "adenocarcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "adenocarcinoma",
+          "start": 71,
+          "end": 85,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "ROS1 fusion negative",
+          "name": "ROS1",
+          "unit": null,
+          "date": null,
+          "source_quote": "ROS1 fusion negative",
+          "start": 284,
+          "end": 304,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "stage",
+          "value": "stage IVB",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "stage IVB",
+          "start": 117,
+          "end": 126,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "62-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "62-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "PD-L1 (22C3) TPS 10%",
+          "name": "PD-L1",
+          "unit": null,
+          "date": null,
+          "source_quote": "PD-L1 (22C3) TPS 10%",
+          "start": 306,
+          "end": 326,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "EGFR exon 19 deletion detected",
+          "name": "EGFR",
+          "unit": null,
+          "date": null,
+          "source_quote": "EGFR exon 19 deletion detected",
+          "start": 224,
+          "end": 254,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "ALK rearrangement negative",
+          "name": "ALK",
+          "unit": null,
+          "date": null,
+          "source_quote": "ALK rearrangement negative",
+          "start": 256,
+          "end": 282,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "lab",
+          "value": "Creatinine 0.9 mg/dL",
+          "name": "creatinine",
+          "unit": null,
+          "date": null,
+          "source_quote": "Creatinine 0.9 mg/dL",
+          "start": 382,
+          "end": 402,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "lab",
+          "value": "bilirubin 0.6 mg/dL",
+          "name": "bilirubin",
+          "unit": null,
+          "date": null,
+          "source_quote": "bilirubin 0.6 mg/dL",
+          "start": 404,
+          "end": 423,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 11,
+        "verified": 11,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 10,
+        "gold_recall": 0.769,
+        "missed": [
+          "metastatic_site:liver",
+          "metastatic_site:brain",
+          "comorbidity:hypothyroidism"
+        ],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "applicability": {
+        "general_mean": 0.5,
+        "case_mean": 0.876,
+        "general_different_population": 3,
+        "case_different_population": 1,
+        "shared_studies": 0,
+        "case_query": "What first-line systemic treatment has the strongest survival evidence for this patient \u2014 patient context: lung adenocarcinoma, adenocarcinoma, stage IVB, PD-L1 (22C3) TPS 10%; EGFR exon 19 deletion detected?"
+      }
+    },
+    {
+      "id": "case_02_nsclc_pdl1_conflict",
+      "n_gold": 12,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 7,
+        "verified": 7,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 6,
+        "gold_recall": 0.5,
+        "missed": [
+          "histology:squamous",
+          "biomarker:80",
+          "biomarker:45",
+          "lab:72",
+          "comorbidity:diabetes",
+          "medication:metformin"
+        ],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "non-small cell lung cancer",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "non-small cell lung cancer",
+          "start": 68,
+          "end": 94,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 0",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 0",
+          "start": 323,
+          "end": 329,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "stage",
+          "value": "stage IV",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "stage IV",
+          "start": 59,
+          "end": 67,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "68-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "68-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "EGFR wild-type",
+          "name": "EGFR",
+          "unit": null,
+          "date": null,
+          "source_quote": "EGFR wild-type",
+          "start": 169,
+          "end": 183,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "ALK negative",
+          "name": "ALK",
+          "unit": null,
+          "date": null,
+          "source_quote": "ALK negative",
+          "start": 185,
+          "end": 197,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "KRAS G12C",
+          "name": "KRAS",
+          "unit": null,
+          "date": null,
+          "source_quote": "KRAS G12C",
+          "start": 199,
+          "end": 208,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 7,
+        "verified": 7,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 6,
+        "gold_recall": 0.5,
+        "missed": [
+          "histology:squamous",
+          "biomarker:80",
+          "biomarker:45",
+          "lab:72",
+          "comorbidity:diabetes",
+          "medication:metformin"
+        ],
+        "conflicts": [],
+        "missing_data": []
+      },
+      "conflict_detected": false,
+      "applicability": {
+        "general_mean": 0.75,
+        "case_mean": 1.0,
+        "general_different_population": 4,
+        "case_different_population": 0,
+        "shared_studies": 0,
+        "case_query": "Is first-line pembrolizumab monotherapy supported by evidence for this patient \u2014 patient context: non-small cell lung cancer, stage IV, KRAS G12C?"
+      }
+    },
+    {
+      "id": "case_03_breast_her2_pos",
+      "n_gold": 12,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 6,
+        "verified": 6,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 5,
+        "gold_recall": 0.417,
+        "missed": [
+          "biomarker:er+negative",
+          "biomarker:pr+negative",
+          "biomarker:her2+3+",
+          "metastatic_site:liver",
+          "prior_therapy:trastuzumab+pertuzumab",
+          "lab:58",
+          "lab:48"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA",
+          "PIK3CA/ESR1"
+        ]
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "breast cancer",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "breast cancer",
+          "start": 34,
+          "end": 47,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 1",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 1",
+          "start": 302,
+          "end": 308,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "histology",
+          "value": "ductal carcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "ductal carcinoma",
+          "start": 58,
+          "end": 74,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "stage",
+          "value": "metastatic",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "metastatic",
+          "start": 23,
+          "end": 33,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "54-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "54-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "HER2 positive",
+          "name": "HER2",
+          "unit": null,
+          "date": null,
+          "source_quote": "HER2 positive",
+          "start": 102,
+          "end": 115,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 6,
+        "verified": 6,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 5,
+        "gold_recall": 0.417,
+        "missed": [
+          "biomarker:er+negative",
+          "biomarker:pr+negative",
+          "biomarker:her2+3+",
+          "metastatic_site:liver",
+          "prior_therapy:trastuzumab+pertuzumab",
+          "lab:58",
+          "lab:48"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA",
+          "PIK3CA/ESR1"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.772,
+        "case_mean": 0.959,
+        "general_different_population": 4,
+        "case_different_population": 0,
+        "shared_studies": 2,
+        "case_query": "What is the best-supported second-line HER2-targeted treatment after progression \u2014 patient context: breast cancer, ductal carcinoma, metastatic, HER2 positive?"
+      }
+    },
+    {
+      "id": "case_04_breast_hr_pos_post_cdk",
+      "n_gold": 12,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 5,
+        "verified": 5,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.333,
+        "missed": [
+          "biomarker:er+90",
+          "biomarker:pr+20",
+          "biomarker:her2+1+",
+          "biomarker:esr1",
+          "metastatic_site:bone",
+          "prior_therapy:letrozole+palbociclib",
+          "comorbidity:osteoporosis",
+          "medication:denosumab"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA"
+        ]
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "breast cancer",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "breast cancer",
+          "start": 60,
+          "end": 73,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 1",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 1",
+          "start": 255,
+          "end": 261,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "71-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "71-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "HER2-low",
+          "name": "HER2",
+          "unit": null,
+          "date": null,
+          "source_quote": "HER2-low",
+          "start": 92,
+          "end": 100,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "lab",
+          "value": "Creatinine 1.2 mg/dL",
+          "name": "creatinine",
+          "unit": null,
+          "date": null,
+          "source_quote": "Creatinine 1.2 mg/dL",
+          "start": 263,
+          "end": 283,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 5,
+        "verified": 5,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.333,
+        "missed": [
+          "biomarker:er+90",
+          "biomarker:pr+20",
+          "biomarker:her2+1+",
+          "biomarker:esr1",
+          "metastatic_site:bone",
+          "prior_therapy:letrozole+palbociclib",
+          "comorbidity:osteoporosis",
+          "medication:denosumab"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "BRCA"
+        ]
+      },
+      "applicability": {
+        "general_mean": null,
+        "case_mean": 0.938,
+        "general_different_population": 0,
+        "case_different_population": 1,
+        "shared_studies": 0,
+        "case_query": "What are the evidence-based options after progression on a CDK4/6 inhibitor \u2014 patient context: breast cancer, HER2-low?"
+      }
+    },
+    {
+      "id": "case_05_crc_left_ras_wt",
+      "n_gold": 9,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 7,
+        "verified": 7,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 6,
+        "gold_recall": 0.667,
+        "missed": [
+          "metastatic_site:liver",
+          "biomarker:braf",
+          "lab:260"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "adenocarcinoma of the sigmoid colon",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "adenocarcinoma of the sigmoid colon",
+          "start": 21,
+          "end": 56,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 0",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 0",
+          "start": 247,
+          "end": 253,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "histology",
+          "value": "adenocarcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "adenocarcinoma",
+          "start": 21,
+          "end": 35,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "59-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "59-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "KRAS and NRAS wild-type",
+          "name": "KRAS",
+          "unit": null,
+          "date": null,
+          "source_quote": "KRAS and NRAS wild-type",
+          "start": 139,
+          "end": 162,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "Microsatellite stable (MSS), pM",
+          "name": "MSI/MMR",
+          "unit": null,
+          "date": null,
+          "source_quote": "Microsatellite stable (MSS), pM",
+          "start": 189,
+          "end": 220,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "lab",
+          "value": "Bilirubin 0.8 mg/dL",
+          "name": "bilirubin",
+          "unit": null,
+          "date": null,
+          "source_quote": "Bilirubin 0.8 mg/dL",
+          "start": 255,
+          "end": 274,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 7,
+        "verified": 7,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 6,
+        "gold_recall": 0.667,
+        "missed": [
+          "metastatic_site:liver",
+          "biomarker:braf",
+          "lab:260"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.571,
+        "case_mean": 0.857,
+        "general_different_population": 3,
+        "case_different_population": 1,
+        "shared_studies": 3,
+        "case_query": "Should an anti-EGFR antibody be added to first-line chemotherapy \u2014 patient context: adenocarcinoma of the sigmoid colon, adenocarcinoma, MSI/MMR Microsatellite stable (MSS), pM?"
+      }
+    },
+    {
+      "id": "case_06_crc_msi_high",
+      "n_gold": 9,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 8,
+        "verified": 8,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.444,
+        "missed": [
+          "cancer_type:adenocarcinoma",
+          "metastatic_site:peritoneum",
+          "metastatic_site:liver",
+          "biomarker:braf+v600e",
+          "lab:10.4"
+        ],
+        "conflicts": [
+          "msi/mmr"
+        ],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "ascending colon",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "ascending colon",
+          "start": 36,
+          "end": 51,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 1",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 1",
+          "start": 271,
+          "end": 277,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "histology",
+          "value": "adenocarcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "adenocarcinoma",
+          "start": 53,
+          "end": 67,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "stage",
+          "value": "metastatic",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "metastatic",
+          "start": 69,
+          "end": 79,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "47-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "47-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "KRAS wild-type",
+          "name": "KRAS",
+          "unit": null,
+          "date": null,
+          "source_quote": "KRAS wild-type",
+          "start": 199,
+          "end": 213,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "dMMR",
+          "name": "MSI/MMR",
+          "unit": null,
+          "date": null,
+          "source_quote": "dMMR",
+          "start": 182,
+          "end": 186,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": [
+            7
+          ]
+        },
+        {
+          "field": "biomarker",
+          "value": "MSI-h",
+          "name": "MSI/MMR",
+          "unit": null,
+          "date": null,
+          "source_quote": "MSI-h",
+          "start": 189,
+          "end": 194,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": [
+            6
+          ]
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 8,
+        "verified": 8,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.444,
+        "missed": [
+          "cancer_type:adenocarcinoma",
+          "metastatic_site:peritoneum",
+          "metastatic_site:liver",
+          "biomarker:braf+v600e",
+          "lab:10.4"
+        ],
+        "conflicts": [
+          "msi/mmr"
+        ],
+        "missing_data": [
+          "HER2"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.5,
+        "case_mean": 0.459,
+        "general_different_population": 3,
+        "case_different_population": 2,
+        "shared_studies": 0,
+        "case_query": "Is first-line immunotherapy better than chemotherapy for this patient \u2014 patient context: ascending colon, adenocarcinoma, metastatic?"
+      }
+    },
+    {
+      "id": "case_07_ovarian_brca",
+      "n_gold": 8,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 5,
+        "verified": 5,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.5,
+        "missed": [
+          "cancer_type:ovarian",
+          "histology:serous",
+          "prior_therapy:carboplatin+paclitaxel",
+          "lab:12"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "Platinum sensitivity"
+        ]
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "high-grade serous",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "high-grade serous",
+          "start": 23,
+          "end": 40,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 0",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 0",
+          "start": 284,
+          "end": 290,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "stage",
+          "value": "stage IIIC",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "stage IIIC",
+          "start": 65,
+          "end": 75,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "56-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "56-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "biomarker",
+          "value": "BRCA1 pathogenic",
+          "name": "BRCA",
+          "unit": null,
+          "date": null,
+          "source_quote": "BRCA1 pathogenic",
+          "start": 86,
+          "end": 102,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 5,
+        "verified": 5,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 4,
+        "gold_recall": 0.5,
+        "missed": [
+          "cancer_type:ovarian",
+          "histology:serous",
+          "prior_therapy:carboplatin+paclitaxel",
+          "lab:12"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "Platinum sensitivity"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.896,
+        "case_mean": 0.938,
+        "general_different_population": 2,
+        "case_different_population": 1,
+        "shared_studies": 5,
+        "case_query": "Does PARP inhibitor maintenance improve survival for this patient \u2014 patient context: high-grade serous, stage IIIC, BRCA1 pathogenic?"
+      }
+    },
+    {
+      "id": "case_08_prostate_mcspc",
+      "n_gold": 10,
+      "llm": {
+        "method": "regex-fallback",
+        "proposed": 6,
+        "verified": 6,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 5,
+        "gold_recall": 0.5,
+        "missed": [
+          "metastatic_site:bone",
+          "lab:psa+85",
+          "prior_therapy:degarelix",
+          "comorbidity:hypertension",
+          "medication:amlodipine"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HRR/BRCA"
+        ]
+      },
+      "llm_facts": [
+        {
+          "field": "cancer_type",
+          "value": "prostate adenocarcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "prostate adenocarcinoma",
+          "start": 69,
+          "end": 92,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "performance_status",
+          "value": "ECOG 1",
+          "name": "ECOG",
+          "unit": null,
+          "date": null,
+          "source_quote": "ECOG 1",
+          "start": 288,
+          "end": 294,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "histology",
+          "value": "adenocarcinoma",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "adenocarcinoma",
+          "start": 78,
+          "end": 92,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "stage",
+          "value": "metastatic",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "metastatic",
+          "start": 37,
+          "end": 47,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "age",
+          "value": "66-year-old",
+          "name": null,
+          "unit": null,
+          "date": null,
+          "source_quote": "66-year-old",
+          "start": 0,
+          "end": 11,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        },
+        {
+          "field": "lab",
+          "value": "Creatinine 1.0 mg/dL",
+          "name": "creatinine",
+          "unit": null,
+          "date": null,
+          "source_quote": "Creatinine 1.0 mg/dL",
+          "start": 296,
+          "end": 316,
+          "verified": true,
+          "method": "regex",
+          "conflict_with": []
+        }
+      ],
+      "regex": {
+        "method": "regex-fallback",
+        "proposed": 6,
+        "verified": 6,
+        "dropped": 0,
+        "traceability": 1.0,
+        "gold_hit": 5,
+        "gold_recall": 0.5,
+        "missed": [
+          "metastatic_site:bone",
+          "lab:psa+85",
+          "prior_therapy:degarelix",
+          "comorbidity:hypertension",
+          "medication:amlodipine"
+        ],
+        "conflicts": [],
+        "missing_data": [
+          "HRR/BRCA"
+        ]
+      },
+      "applicability": {
+        "general_mean": 0.938,
+        "case_mean": 1.0,
+        "general_different_population": 0,
+        "case_different_population": 0,
+        "shared_studies": 1,
+        "case_query": "Does adding an androgen receptor pathway inhibitor to ADT improve overall survival \u2014 patient context: prostate adenocarcinoma, adenocarcinoma, metastatic?"
+      }
+    }
+  ]
+}

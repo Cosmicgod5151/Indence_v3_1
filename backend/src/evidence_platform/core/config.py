@@ -40,7 +40,9 @@ class Settings:
     
     LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "mock")
     LLM_API_KEY: str = os.environ.get("LLM_API_KEY", "")
-    LLM_MODEL_NAME: str = os.environ.get("LLM_MODEL_NAME", "nvidia/nemotron-3-super-120b-a12b")
+    LLM_MODEL_NAME: str = os.environ.get("LLM_MODEL_NAME", "meta-llama/llama-3.3-70b-instruct")
+    ENTAILMENT_MODEL_NAME: str = os.environ.get("ENTAILMENT_MODEL_NAME", "")
+    LLM_TIMEOUT_S: float = float(os.environ.get("LLM_TIMEOUT_S", "90"))
     EMBEDDING_PROVIDER: str = os.environ.get("EMBEDDING_PROVIDER", "mock")
     RERANKER_PROVIDER: str = os.environ.get("RERANKER_PROVIDER", "mock")
     ENTAILMENT_PROVIDER: str = os.environ.get("ENTAILMENT_PROVIDER", "mock")

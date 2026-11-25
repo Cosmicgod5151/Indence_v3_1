@@ -1,0 +1,2321 @@
+{
+  "generated_at": "2026-11-25T11:04:30",
+  "seed": 20261125,
+  "n_passages": 25,
+  "n_claims": 119,
+  "design": "Verifier experiment: Gemini Decision 1 vs a chat-LLM NLI verifier.\n\nGold labels are known by construction (controlled perturbation, in the spirit of\nFactCC-style synthetic consistency tests). From real corpus passages that report a\ntreatment-comparison ratio with a 95% CI, five claims are generated per passage:\n\n  supported        - the ratio and interval exactly as reported\n  number_changed   - point estimate shifted by +0.17          -> contradicted\n  digits_swapped   - decimals transposed (0.68 -> 0.86)       -> contradicted\n  significance_flip- \"no significant difference\" although the CI excludes 1 -> contradicted\n  unreported       - a subgroup result the passage never mentions -> not established\n\nExperiments\n  E1  same claims, same passages: Decision 1 (calibrated choice) vs chat verifier\n  E2  evidence visibility: Decision 1 with the old joined-and-truncated premise\n      (target passage placed after two other passages, cut at 4,000 chars) vs the\n      new per-passage input.\n\n    backend\\venv\\Scripts\\python.exe evals\\run_verifier_eval.py\n",
+  "summary": {
+    "decision_1": {
+      "accuracy": 0.9832,
+      "macro_f1": 0.9813,
+      "n": 119,
+      "brier": 0.0384,
+      "ece": 0.0505,
+      "risk_coverage": [
+        {
+          "threshold": 0.0,
+          "coverage": 1.0,
+          "accuracy": 0.9832
+        },
+        {
+          "threshold": 0.5,
+          "coverage": 1.0,
+          "accuracy": 0.9832
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.9832,
+          "accuracy": 0.9915
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.9748,
+          "accuracy": 0.9914
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.916,
+          "accuracy": 0.9908
+        },
+        {
+          "threshold": 0.85,
+          "coverage": 0.8655,
+          "accuracy": 0.9903
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.7647,
+          "accuracy": 1.0
+        },
+        {
+          "threshold": 0.95,
+          "coverage": 0.6303,
+          "accuracy": 1.0
+        }
+      ],
+      "reliability": [
+        {
+          "bin": "0.0-0.1",
+          "n": 0,
+          "mean_conf": null,
+          "accuracy": null
+        },
+        {
+          "bin": "0.1-0.2",
+          "n": 0,
+          "mean_conf": null,
+          "accuracy": null
+        },
+        {
+          "bin": "0.2-0.3",
+          "n": 0,
+          "mean_conf": null,
+          "accuracy": null
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 0,
+          "mean_conf": null,
+          "accuracy": null
+        },
+        {
+          "bin": "0.4-0.5",
+          "n": 0,
+          "mean_conf": null,
+          "accuracy": null
+        },
+        {
+          "bin": "0.5-0.6",
+          "n": 2,
+          "mean_conf": 0.5519,
+          "accuracy": 0.5
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 1,
+          "mean_conf": 0.6857,
+          "accuracy": 1.0
+        },
+        {
+          "bin": "0.7-0.8",
+          "n": 7,
+          "mean_conf": 0.7531,
+          "accuracy": 1.0
+        },
+        {
+          "bin": "0.8-0.9",
+          "n": 18,
+          "mean_conf": 0.8594,
+          "accuracy": 0.9444
+        },
+        {
+          "bin": "0.9-1.0",
+          "n": 91,
+          "mean_conf": 0.9744,
+          "accuracy": 1.0
+        }
+      ],
+      "requests": 3,
+      "latency_s_per_request": [
+        1.081,
+        1.397,
+        1.106
+      ],
+      "latency_ms_per_claim": 30.1
+    },
+    "chat_verifier": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "n": 119,
+      "model": "gemini:gemini-3.1-flash-lite",
+      "unverified": 0,
+      "requests": 6,
+      "latency_s_per_request": [
+        4.306,
+        4.431,
+        15.265,
+        2.641,
+        4.208,
+        33.187
+      ],
+      "latency_ms_per_claim": 538.1
+    },
+    "by_type": {
+      "supported": {
+        "n": 25,
+        "decision_1": 1.0,
+        "chat_verifier": 1.0
+      },
+      "number_changed": {
+        "n": 21,
+        "decision_1": 1.0,
+        "chat_verifier": 1.0
+      },
+      "digits_swapped": {
+        "n": 23,
+        "decision_1": 1.0,
+        "chat_verifier": 1.0
+      },
+      "significance_flip": {
+        "n": 25,
+        "decision_1": 1.0,
+        "chat_verifier": 1.0
+      },
+      "unreported": {
+        "n": 25,
+        "decision_1": 0.92,
+        "chat_verifier": 1.0
+      }
+    },
+    "e2_evidence_visibility": {
+      "supported": {
+        "n": 25,
+        "truncated_join_accuracy": 0.24,
+        "full_passages_accuracy": 1.0,
+        "truncated_join_not_established": 0.76,
+        "unverified_outputs": 0
+      },
+      "number_changed": {
+        "n": 21,
+        "truncated_join_accuracy": 0.3333,
+        "full_passages_accuracy": 1.0,
+        "truncated_join_not_established": 0.6667,
+        "unverified_outputs": 0
+      }
+    }
+  },
+  "rows": [
+    {
+      "item": 0,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.43 (95% CI 0.35 to 0.53).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9909,
+        "probabilities": {
+          "entailment": 0.9909,
+          "contradiction": 0.0038,
+          "neutral": 0.0052
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 0,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.60 (95% CI 0.35 to 0.53).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9963,
+        "probabilities": {
+          "contradiction": 0.9963,
+          "entailment": 0.0006,
+          "neutral": 0.0031
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 0,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.34 (95% CI 0.35 to 0.53).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.993,
+        "probabilities": {
+          "neutral": 0.0063,
+          "contradiction": 0.993,
+          "entailment": 0.0008
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 0,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.43 (95% CI 0.35 to 0.53) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9949,
+        "probabilities": {
+          "entailment": 0.0011,
+          "contradiction": 0.9949,
+          "neutral": 0.0041
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 0,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.893,
+        "probabilities": {
+          "entailment": 0.003,
+          "contradiction": 0.104,
+          "neutral": 0.893
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 1,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.33 (95% CI 0.24 to 0.45).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9854,
+        "probabilities": {
+          "contradiction": 0.0065,
+          "neutral": 0.008,
+          "entailment": 0.9854
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 1,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.50 (95% CI 0.24 to 0.45).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9879,
+        "probabilities": {
+          "neutral": 0.0111,
+          "entailment": 0.001,
+          "contradiction": 0.9879
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 1,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.33 (95% CI 0.24 to 0.45) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9947,
+        "probabilities": {
+          "neutral": 0.0033,
+          "entailment": 0.002,
+          "contradiction": 0.9947
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 1,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7438,
+        "probabilities": {
+          "neutral": 0.7438,
+          "contradiction": 0.2556,
+          "entailment": 0.0006
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 2,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.48 (95% CI 0.32 to 0.71).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9108,
+        "probabilities": {
+          "entailment": 0.9108,
+          "contradiction": 0.0548,
+          "neutral": 0.0344
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 2,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.65 (95% CI 0.32 to 0.71).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9731,
+        "probabilities": {
+          "entailment": 0.0058,
+          "neutral": 0.0211,
+          "contradiction": 0.9731
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 2,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.84 (95% CI 0.32 to 0.71).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9699,
+        "probabilities": {
+          "neutral": 0.0265,
+          "entailment": 0.0036,
+          "contradiction": 0.9699
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 2,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.48 (95% CI 0.32 to 0.71) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9836,
+        "probabilities": {
+          "neutral": 0.0109,
+          "entailment": 0.0055,
+          "contradiction": 0.9836
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 2,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9056,
+        "probabilities": {
+          "contradiction": 0.0928,
+          "neutral": 0.9056,
+          "entailment": 0.0016
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 3,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.65 (95% CI 0.43 to 0.97).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.887,
+        "probabilities": {
+          "entailment": 0.887,
+          "neutral": 0.052,
+          "contradiction": 0.061
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 3,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.82 (95% CI 0.43 to 0.97).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9781,
+        "probabilities": {
+          "contradiction": 0.9781,
+          "entailment": 0.0012,
+          "neutral": 0.0206
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 3,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.56 (95% CI 0.43 to 0.97).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9736,
+        "probabilities": {
+          "entailment": 0.0027,
+          "neutral": 0.0237,
+          "contradiction": 0.9736
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 3,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.65 (95% CI 0.43 to 0.97) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9132,
+        "probabilities": {
+          "neutral": 0.065,
+          "entailment": 0.0218,
+          "contradiction": 0.9132
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 3,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7313,
+        "probabilities": {
+          "neutral": 0.7313,
+          "contradiction": 0.2682,
+          "entailment": 0.0005
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 4,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.64 (95% CI 0.47 to 0.87).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9893,
+        "probabilities": {
+          "contradiction": 0.0066,
+          "entailment": 0.9893,
+          "neutral": 0.0041
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 4,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.81 (95% CI 0.47 to 0.87).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9677,
+        "probabilities": {
+          "contradiction": 0.9677,
+          "entailment": 0.0031,
+          "neutral": 0.0292
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 4,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.46 (95% CI 0.47 to 0.87).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9803,
+        "probabilities": {
+          "entailment": 0.0045,
+          "neutral": 0.0151,
+          "contradiction": 0.9803
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 4,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.64 (95% CI 0.47 to 0.87) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.997,
+        "probabilities": {
+          "neutral": 0.0024,
+          "contradiction": 0.997,
+          "entailment": 0.0006
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 4,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9447,
+        "probabilities": {
+          "entailment": 0.0009,
+          "neutral": 0.9447,
+          "contradiction": 0.0544
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 5,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.51 (95% CI 0.33 to 0.80).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9861,
+        "probabilities": {
+          "neutral": 0.0089,
+          "contradiction": 0.005,
+          "entailment": 0.9861
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 5,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.68 (95% CI 0.33 to 0.80).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9858,
+        "probabilities": {
+          "neutral": 0.0115,
+          "entailment": 0.0026,
+          "contradiction": 0.9858
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 5,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.15 (95% CI 0.33 to 0.80).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9902,
+        "probabilities": {
+          "contradiction": 0.9902,
+          "neutral": 0.008,
+          "entailment": 0.0018
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 5,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.51 (95% CI 0.33 to 0.80) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9105,
+        "probabilities": {
+          "contradiction": 0.9105,
+          "entailment": 0.0107,
+          "neutral": 0.0788
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 5,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.8469,
+        "probabilities": {
+          "neutral": 0.8469,
+          "contradiction": 0.1513,
+          "entailment": 0.0018
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 6,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.57 (95% CI 0.44 to 0.74).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9775,
+        "probabilities": {
+          "entailment": 0.9775,
+          "neutral": 0.0101,
+          "contradiction": 0.0124
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 6,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.57 (95% CI 0.44 to 0.74) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9981,
+        "probabilities": {
+          "entailment": 0.0008,
+          "neutral": 0.001,
+          "contradiction": 0.9981
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 6,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.75 (95% CI 0.44 to 0.74).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9862,
+        "probabilities": {
+          "neutral": 0.011,
+          "entailment": 0.0028,
+          "contradiction": 0.9862
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 6,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.8938,
+        "probabilities": {
+          "contradiction": 0.8938,
+          "neutral": 0.1037,
+          "entailment": 0.0025
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 7,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.31 (95% CI 0.21 to 0.45).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.8531,
+        "probabilities": {
+          "entailment": 0.8531,
+          "contradiction": 0.0764,
+          "neutral": 0.0706
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 7,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.48 (95% CI 0.21 to 0.45).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9625,
+        "probabilities": {
+          "neutral": 0.035,
+          "entailment": 0.0025,
+          "contradiction": 0.9625
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 7,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.13 (95% CI 0.21 to 0.45).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9758,
+        "probabilities": {
+          "entailment": 0.0058,
+          "neutral": 0.0184,
+          "contradiction": 0.9758
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 7,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.31 (95% CI 0.21 to 0.45) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9954,
+        "probabilities": {
+          "neutral": 0.0032,
+          "contradiction": 0.9954,
+          "entailment": 0.0014
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 7,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7989,
+        "probabilities": {
+          "neutral": 0.7989,
+          "entailment": 0.0006,
+          "contradiction": 0.2004
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 8,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.66 (95% CI 0.44 to 0.99).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9964,
+        "probabilities": {
+          "neutral": 0.0022,
+          "contradiction": 0.0014,
+          "entailment": 0.9964
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 8,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.83 (95% CI 0.44 to 0.99).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9797,
+        "probabilities": {
+          "neutral": 0.0195,
+          "entailment": 0.0008,
+          "contradiction": 0.9797
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 8,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.66 (95% CI 0.44 to 0.99) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9909,
+        "probabilities": {
+          "contradiction": 0.9909,
+          "entailment": 0.0027,
+          "neutral": 0.0065
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 8,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7056,
+        "probabilities": {
+          "contradiction": 0.292,
+          "entailment": 0.0025,
+          "neutral": 0.7056
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 9,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.60 (95% CI 0.51 to 0.69).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.8006,
+        "probabilities": {
+          "neutral": 0.1081,
+          "entailment": 0.8006,
+          "contradiction": 0.0913
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 9,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.77 (95% CI 0.51 to 0.69).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9723,
+        "probabilities": {
+          "contradiction": 0.9723,
+          "neutral": 0.0245,
+          "entailment": 0.0032
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 9,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.06 (95% CI 0.51 to 0.69).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9915,
+        "probabilities": {
+          "neutral": 0.0058,
+          "entailment": 0.0027,
+          "contradiction": 0.9915
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 9,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.60 (95% CI 0.51 to 0.69) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9959,
+        "probabilities": {
+          "contradiction": 0.9959,
+          "neutral": 0.002,
+          "entailment": 0.0021
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 9,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7091,
+        "probabilities": {
+          "contradiction": 0.2896,
+          "entailment": 0.0012,
+          "neutral": 0.7091
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 10,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.62 (95% CI 0.41 to 0.90).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.8706,
+        "probabilities": {
+          "neutral": 0.0734,
+          "entailment": 0.8706,
+          "contradiction": 0.0559
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 10,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.79 (95% CI 0.41 to 0.90).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.8669,
+        "probabilities": {
+          "neutral": 0.1281,
+          "contradiction": 0.8669,
+          "entailment": 0.005
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 10,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.26 (95% CI 0.41 to 0.90).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9677,
+        "probabilities": {
+          "contradiction": 0.9677,
+          "neutral": 0.0271,
+          "entailment": 0.0052
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 10,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.62 (95% CI 0.41 to 0.90) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.994,
+        "probabilities": {
+          "entailment": 0.0008,
+          "contradiction": 0.994,
+          "neutral": 0.0052
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 10,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7916,
+        "probabilities": {
+          "contradiction": 0.2057,
+          "entailment": 0.0027,
+          "neutral": 0.7916
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 11,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.53 (95% CI 0.32 to 0.87).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9355,
+        "probabilities": {
+          "entailment": 0.9355,
+          "contradiction": 0.0287,
+          "neutral": 0.0358
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 11,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.70 (95% CI 0.32 to 0.87).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.981,
+        "probabilities": {
+          "neutral": 0.0164,
+          "entailment": 0.0026,
+          "contradiction": 0.981
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 11,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.35 (95% CI 0.32 to 0.87).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9782,
+        "probabilities": {
+          "neutral": 0.0202,
+          "contradiction": 0.9782,
+          "entailment": 0.0016
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 11,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.53 (95% CI 0.32 to 0.87) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.8918,
+        "probabilities": {
+          "contradiction": 0.8918,
+          "neutral": 0.0688,
+          "entailment": 0.0394
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 11,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.5651,
+        "probabilities": {
+          "contradiction": 0.5651,
+          "neutral": 0.4329,
+          "entailment": 0.002
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 12,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.79 (95% CI 0.63 to 0.99).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9892,
+        "probabilities": {
+          "entailment": 0.9892,
+          "neutral": 0.0063,
+          "contradiction": 0.0045
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 12,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.96 (95% CI 0.63 to 0.99).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.996,
+        "probabilities": {
+          "entailment": 0.0006,
+          "contradiction": 0.996,
+          "neutral": 0.0034
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 12,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.97 (95% CI 0.63 to 0.99).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9941,
+        "probabilities": {
+          "contradiction": 0.9941,
+          "neutral": 0.0053,
+          "entailment": 0.0006
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 12,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.79 (95% CI 0.63 to 0.99) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.894,
+        "probabilities": {
+          "entailment": 0.0162,
+          "contradiction": 0.894,
+          "neutral": 0.0898
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 12,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.6857,
+        "probabilities": {
+          "contradiction": 0.3129,
+          "neutral": 0.6857,
+          "entailment": 0.0014
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 13,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.57 (95% CI 0.33 to 0.98).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9054,
+        "probabilities": {
+          "neutral": 0.0545,
+          "contradiction": 0.0401,
+          "entailment": 0.9054
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 13,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.74 (95% CI 0.33 to 0.98).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9903,
+        "probabilities": {
+          "contradiction": 0.9903,
+          "entailment": 0.0012,
+          "neutral": 0.0085
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 13,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.75 (95% CI 0.33 to 0.98).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9899,
+        "probabilities": {
+          "neutral": 0.0084,
+          "entailment": 0.0016,
+          "contradiction": 0.9899
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 13,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.57 (95% CI 0.33 to 0.98) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9931,
+        "probabilities": {
+          "contradiction": 0.9931,
+          "neutral": 0.0049,
+          "entailment": 0.002
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 13,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.8126,
+        "probabilities": {
+          "neutral": 0.8126,
+          "entailment": 0.0017,
+          "contradiction": 0.1857
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 14,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.53 (95% CI 0.44 to 0.65).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.8085,
+        "probabilities": {
+          "neutral": 0.1562,
+          "entailment": 0.8085,
+          "contradiction": 0.0354
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 14,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.70 (95% CI 0.44 to 0.65).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9905,
+        "probabilities": {
+          "contradiction": 0.9905,
+          "entailment": 0.0005,
+          "neutral": 0.009
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 14,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.35 (95% CI 0.44 to 0.65).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9926,
+        "probabilities": {
+          "entailment": 0.0022,
+          "neutral": 0.0052,
+          "contradiction": 0.9926
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 14,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.53 (95% CI 0.44 to 0.65) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9597,
+        "probabilities": {
+          "neutral": 0.0335,
+          "entailment": 0.0068,
+          "contradiction": 0.9597
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 14,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.8094,
+        "probabilities": {
+          "contradiction": 0.1895,
+          "entailment": 0.0011,
+          "neutral": 0.8094
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 15,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.62 (95% CI 0.49 to 0.79).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9376,
+        "probabilities": {
+          "contradiction": 0.0175,
+          "neutral": 0.0449,
+          "entailment": 0.9376
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 15,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.62 (95% CI 0.49 to 0.79) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9927,
+        "probabilities": {
+          "neutral": 0.0069,
+          "contradiction": 0.9927,
+          "entailment": 0.0004
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 15,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.26 (95% CI 0.49 to 0.79).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9926,
+        "probabilities": {
+          "entailment": 0.0022,
+          "neutral": 0.0052,
+          "contradiction": 0.9926
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 15,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.7913,
+        "probabilities": {
+          "neutral": 0.7913,
+          "entailment": 0.0011,
+          "contradiction": 0.2075
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 16,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.73 (95% CI 0.62 to 0.86).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9377,
+        "probabilities": {
+          "neutral": 0.0505,
+          "entailment": 0.9377,
+          "contradiction": 0.0118
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 16,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.90 (95% CI 0.62 to 0.86).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.996,
+        "probabilities": {
+          "contradiction": 0.996,
+          "entailment": 0.0002,
+          "neutral": 0.0038
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 16,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.37 (95% CI 0.62 to 0.86).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9856,
+        "probabilities": {
+          "neutral": 0.0128,
+          "entailment": 0.0016,
+          "contradiction": 0.9856
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 16,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.73 (95% CI 0.62 to 0.86) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9951,
+        "probabilities": {
+          "neutral": 0.004,
+          "entailment": 0.001,
+          "contradiction": 0.9951
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 16,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9051,
+        "probabilities": {
+          "contradiction": 0.0939,
+          "neutral": 0.9051,
+          "entailment": 0.001
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 17,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.47 (95% CI 0.25 to 0.87).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9181,
+        "probabilities": {
+          "contradiction": 0.0257,
+          "neutral": 0.0562,
+          "entailment": 0.9181
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 17,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.47 (95% CI 0.25 to 0.87) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9966,
+        "probabilities": {
+          "neutral": 0.0027,
+          "entailment": 0.0007,
+          "contradiction": 0.9966
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 17,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.74 (95% CI 0.25 to 0.87).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.925,
+        "probabilities": {
+          "entailment": 0.0023,
+          "contradiction": 0.925,
+          "neutral": 0.0726
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 17,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.5387,
+        "probabilities": {
+          "entailment": 0.0012,
+          "neutral": 0.5387,
+          "contradiction": 0.46
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 18,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.89 (95% CI 0.80 to 0.99).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9832,
+        "probabilities": {
+          "entailment": 0.9832,
+          "contradiction": 0.005,
+          "neutral": 0.0118
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 18,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.89 (95% CI 0.80 to 0.99) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9847,
+        "probabilities": {
+          "neutral": 0.0134,
+          "contradiction": 0.9847,
+          "entailment": 0.0019
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 18,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.98 (95% CI 0.80 to 0.99).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9904,
+        "probabilities": {
+          "neutral": 0.0081,
+          "entailment": 0.0015,
+          "contradiction": 0.9904
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 18,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9544,
+        "probabilities": {
+          "neutral": 0.9544,
+          "contradiction": 0.0445,
+          "entailment": 0.001
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 19,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.69 (95% CI 0.49 to 0.97).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9431,
+        "probabilities": {
+          "entailment": 0.9431,
+          "contradiction": 0.0149,
+          "neutral": 0.042
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 19,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.86 (95% CI 0.49 to 0.97).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.96,
+        "probabilities": {
+          "neutral": 0.0372,
+          "contradiction": 0.96,
+          "entailment": 0.0028
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 19,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.96 (95% CI 0.49 to 0.97).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9815,
+        "probabilities": {
+          "contradiction": 0.9815,
+          "neutral": 0.0171,
+          "entailment": 0.0014
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 19,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.69 (95% CI 0.49 to 0.97) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.8251,
+        "probabilities": {
+          "entailment": 0.0321,
+          "neutral": 0.1428,
+          "contradiction": 0.8251
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 19,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.8929,
+        "probabilities": {
+          "entailment": 0.0013,
+          "contradiction": 0.1059,
+          "neutral": 0.8929
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 20,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.69 (95% CI 0.62 to 0.77).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.8838,
+        "probabilities": {
+          "contradiction": 0.0443,
+          "neutral": 0.0719,
+          "entailment": 0.8838
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 20,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.86 (95% CI 0.62 to 0.77).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9327,
+        "probabilities": {
+          "entailment": 0.0091,
+          "neutral": 0.0581,
+          "contradiction": 0.9327
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 20,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.96 (95% CI 0.62 to 0.77).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9714,
+        "probabilities": {
+          "contradiction": 0.9714,
+          "neutral": 0.027,
+          "entailment": 0.0016
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 20,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.69 (95% CI 0.62 to 0.77) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9964,
+        "probabilities": {
+          "entailment": 0.0005,
+          "contradiction": 0.9964,
+          "neutral": 0.0031
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 20,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9483,
+        "probabilities": {
+          "entailment": 0.003,
+          "neutral": 0.9483,
+          "contradiction": 0.0487
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 21,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.37 (95% CI 0.27 to 0.52).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9915,
+        "probabilities": {
+          "entailment": 0.9915,
+          "contradiction": 0.0035,
+          "neutral": 0.005
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 21,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.54 (95% CI 0.27 to 0.52).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9954,
+        "probabilities": {
+          "entailment": 0.0014,
+          "neutral": 0.0033,
+          "contradiction": 0.9954
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 21,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.73 (95% CI 0.27 to 0.52).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9817,
+        "probabilities": {
+          "neutral": 0.0149,
+          "entailment": 0.0034,
+          "contradiction": 0.9817
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 21,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.37 (95% CI 0.27 to 0.52) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9964,
+        "probabilities": {
+          "contradiction": 0.9964,
+          "neutral": 0.0025,
+          "entailment": 0.0011
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 21,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9414,
+        "probabilities": {
+          "entailment": 0.001,
+          "neutral": 0.9414,
+          "contradiction": 0.0576
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 22,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.46 (95% CI 0.34 to 0.62).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9728,
+        "probabilities": {
+          "neutral": 0.0189,
+          "contradiction": 0.0083,
+          "entailment": 0.9728
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 22,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.63 (95% CI 0.34 to 0.62).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9634,
+        "probabilities": {
+          "contradiction": 0.9634,
+          "entailment": 0.0107,
+          "neutral": 0.0259
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 22,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.64 (95% CI 0.34 to 0.62).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9638,
+        "probabilities": {
+          "entailment": 0.0093,
+          "contradiction": 0.9638,
+          "neutral": 0.0269
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 22,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.46 (95% CI 0.34 to 0.62) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9975,
+        "probabilities": {
+          "entailment": 0.0015,
+          "neutral": 0.001,
+          "contradiction": 0.9975
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 22,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9712,
+        "probabilities": {
+          "neutral": 0.9712,
+          "contradiction": 0.0279,
+          "entailment": 0.0008
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 23,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.75 (95% CI 0.68 to 0.83).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.8804,
+        "probabilities": {
+          "contradiction": 0.051,
+          "neutral": 0.0686,
+          "entailment": 0.8804
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 23,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.92 (95% CI 0.68 to 0.83).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9926,
+        "probabilities": {
+          "neutral": 0.0068,
+          "contradiction": 0.9926,
+          "entailment": 0.0005
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 23,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.57 (95% CI 0.68 to 0.83).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9745,
+        "probabilities": {
+          "neutral": 0.0227,
+          "entailment": 0.0028,
+          "contradiction": 0.9745
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 23,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.75 (95% CI 0.68 to 0.83) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9743,
+        "probabilities": {
+          "entailment": 0.0108,
+          "contradiction": 0.9743,
+          "neutral": 0.0149
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 23,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.9798,
+        "probabilities": {
+          "entailment": 0.0015,
+          "contradiction": 0.0187,
+          "neutral": 0.9798
+        }
+      },
+      "chat": "neutral"
+    },
+    {
+      "item": 24,
+      "type": "supported",
+      "gold": "entailment",
+      "claim": "The study reported a hazard ratio of 0.53 (95% CI 0.38 to 0.73).",
+      "decision": {
+        "label": "entailment",
+        "confidence": 0.9828,
+        "probabilities": {
+          "contradiction": 0.0072,
+          "entailment": 0.9828,
+          "neutral": 0.0099
+        }
+      },
+      "chat": "entailment"
+    },
+    {
+      "item": 24,
+      "type": "number_changed",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.70 (95% CI 0.38 to 0.73).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9917,
+        "probabilities": {
+          "neutral": 0.0075,
+          "contradiction": 0.9917,
+          "entailment": 0.0008
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 24,
+      "type": "digits_swapped",
+      "gold": "contradiction",
+      "claim": "The study reported a hazard ratio of 0.35 (95% CI 0.38 to 0.73).",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9917,
+        "probabilities": {
+          "entailment": 0.0048,
+          "neutral": 0.0035,
+          "contradiction": 0.9917
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 24,
+      "type": "significance_flip",
+      "gold": "contradiction",
+      "claim": "The hazard ratio of 0.53 (95% CI 0.38 to 0.73) was not statistically significant, because its confidence interval included 1.",
+      "decision": {
+        "label": "contradiction",
+        "confidence": 0.9945,
+        "probabilities": {
+          "entailment": 0.0015,
+          "neutral": 0.004,
+          "contradiction": 0.9945
+        }
+      },
+      "chat": "contradiction"
+    },
+    {
+      "item": 24,
+      "type": "unreported",
+      "gold": "neutral",
+      "claim": "In the subgroup of patients aged 80 years or older, the study reported a hazard ratio of 0.41.",
+      "decision": {
+        "label": "neutral",
+        "confidence": 0.8587,
+        "probabilities": {
+          "neutral": 0.8587,
+          "entailment": 0.0083,
+          "contradiction": 0.133
+        }
+      },
+      "chat": "neutral"
+    }
+  ],
+  "passages": [
+    {
+      "chunk_id": "1bc3569b-d636-4dd1-acff-c13aed2a4228",
+      "measure": "HR",
+      "est": 0.43,
+      "lo": 0.35,
+      "hi": 0.53,
+      "endpoint": "Mortality",
+      "quote": "HR, 0.43; 95% CI, 0.35\u20130.53) compared with STR or biopsy (P < 0.000"
+    },
+    {
+      "chunk_id": "5414048a-7f88-4c65-ba29-3b2e72bfa2ae",
+      "measure": "HR",
+      "est": 0.33,
+      "lo": 0.24,
+      "hi": 0.45,
+      "endpoint": "Progression-free survival",
+      "quote": "HR 0.33, 95% CI 0.24-0.45,\nP\n< 0.0001"
+    },
+    {
+      "chunk_id": "41ec6894-53a2-41b1-a52b-f241bbd57516",
+      "measure": "HR",
+      "est": 0.48,
+      "lo": 0.322,
+      "hi": 0.715,
+      "endpoint": "Progression-free survival",
+      "quote": "HR: 0.480; 95% CI: 0.322\u20130.715; nominal\nP\nvalue\u00a0=\u00a00.0002"
+    },
+    {
+      "chunk_id": "e101f4a5-e864-4598-b159-0a4b71b5a579",
+      "measure": "HR",
+      "est": 0.645,
+      "lo": 0.427,
+      "hi": 0.974,
+      "endpoint": "Event-free survival",
+      "quote": "HR [95% CI]: 0.645 [0.427, 0.974"
+    },
+    {
+      "chunk_id": "744baf5e-be60-4782-a4f5-11b4604cc474",
+      "measure": "HR",
+      "est": 0.64,
+      "lo": 0.47,
+      "hi": 0.87,
+      "endpoint": "Progression-free survival",
+      "quote": "HR 0.64; 95% CI 0.47\u20130.87"
+    },
+    {
+      "chunk_id": "fef02373-5ceb-4532-abe9-378cef53a7fe",
+      "measure": "HR",
+      "est": 0.51,
+      "lo": 0.33,
+      "hi": 0.8,
+      "endpoint": "Progression-free survival",
+      "quote": "hazard ratio 0.51, 95% CI 0.33\u20130.80"
+    },
+    {
+      "chunk_id": "f602bc12-855b-4cc7-b912-49ffeadce2c6",
+      "measure": "HR",
+      "est": 0.57,
+      "lo": 0.44,
+      "hi": 0.74,
+      "endpoint": "Mortality",
+      "quote": "HR, 0.57 [95% CI 0.44\u20130.74;\np\n<\u20090.0001"
+    },
+    {
+      "chunk_id": "00fc8014-ac9b-44cd-b0ae-33b965088330",
+      "measure": "HR",
+      "est": 0.31,
+      "lo": 0.21,
+      "hi": 0.45,
+      "endpoint": "Progression-free survival",
+      "quote": "HR of 0.31 (95% CI 0.21\u20130.45,\nZ\n=\u20096.21,\np\n<\u20090.00001"
+    },
+    {
+      "chunk_id": "70cc3cd5-66fd-45c7-807b-fe05ec6c49b1",
+      "measure": "HR",
+      "est": 0.66,
+      "lo": 0.44,
+      "hi": 0.99,
+      "endpoint": "Overall survival",
+      "quote": "HR 0.66, 95% CI 0.44-0.99,\nP\n= 0.04"
+    },
+    {
+      "chunk_id": "79a63f41-707f-4377-9dd6-20f63c3e7f5d",
+      "measure": "HR",
+      "est": 0.6,
+      "lo": 0.51,
+      "hi": 0.69,
+      "endpoint": "Mortality",
+      "quote": "HR 0.60, 95% CI 0.51\u20130.69"
+    },
+    {
+      "chunk_id": "853d0580-2c42-40a1-951a-e4e2ed168d28",
+      "measure": "HR",
+      "est": 0.62,
+      "lo": 0.41,
+      "hi": 0.9,
+      "endpoint": "Progression-free survival",
+      "quote": "HR = 0.62, 95% CI: 0.41\u20130.90"
+    },
+    {
+      "chunk_id": "4ad9f2ea-d27f-464c-9d62-4baf5b4431c6",
+      "measure": "HR",
+      "est": 0.53,
+      "lo": 0.32,
+      "hi": 0.87,
+      "endpoint": "Recurrence-free survival",
+      "quote": "hazard ratio for relapse or death, 0.53; 95% CI, 0.32 to 0.87"
+    },
+    {
+      "chunk_id": "adadfad1-d70a-4d78-affc-b33bb66d8c67",
+      "measure": "HR",
+      "est": 0.79,
+      "lo": 0.63,
+      "hi": 0.99,
+      "endpoint": "Overall survival",
+      "quote": "HR of 0.79 (95% CI, 0.63 to 0.99"
+    },
+    {
+      "chunk_id": "7b4df023-89a0-4aa6-a5bb-385a392dbbbb",
+      "measure": "HR",
+      "est": 0.57,
+      "lo": 0.33,
+      "hi": 0.98,
+      "endpoint": "Disease-free survival",
+      "quote": "hazard ratio 0.57, 95% CI 0.33 to 0.98; P=0.04"
+    },
+    {
+      "chunk_id": "3eef9e91-3226-4830-98c8-f93835fa846c",
+      "measure": "HR",
+      "est": 0.53,
+      "lo": 0.44,
+      "hi": 0.65,
+      "endpoint": "Overall survival",
+      "quote": "hazard ratio for death was 0.53 (95% CI, 0.44 to 0.65"
+    },
+    {
+      "chunk_id": "62b9ea1b-98d3-46f5-9649-74dbdf672397",
+      "measure": "HR",
+      "est": 0.62,
+      "lo": 0.49,
+      "hi": 0.79,
+      "endpoint": "Progression-free survival",
+      "quote": "HR = 0.62; 95% CI, 0.49\u20130.79;\nP\n< 0.0001"
+    },
+    {
+      "chunk_id": "3ec383d1-389c-4856-965c-53096d9dd94f",
+      "measure": "HR",
+      "est": 0.73,
+      "lo": 0.62,
+      "hi": 0.86,
+      "endpoint": "Overall survival",
+      "quote": "hazard ratio [HR], 0.73; 95% CI, 0.62 to 0.86;\nP\n<\u2005.0001"
+    },
+    {
+      "chunk_id": "38dcfc60-a383-46fd-b6e0-32acf3defb7e",
+      "measure": "HR",
+      "est": 0.47,
+      "lo": 0.25,
+      "hi": 0.87,
+      "endpoint": "Progression-free survival",
+      "quote": "HR, 0.47 [95% CI, 0.25 to 0.87];\nP\n= .014"
+    },
+    {
+      "chunk_id": "d757b337-b153-4bbd-89b3-d87422108217",
+      "measure": "HR",
+      "est": 0.89,
+      "lo": 0.8,
+      "hi": 0.99,
+      "endpoint": "Mortality",
+      "quote": "HR 0.89; 95% CI 0.80\u20130.99; P\u2009<\u20090.05"
+    },
+    {
+      "chunk_id": "befa67b4-4aa3-44b9-b89b-3085c24264af",
+      "measure": "HR",
+      "est": 0.69,
+      "lo": 0.49,
+      "hi": 0.97,
+      "endpoint": "Overall survival",
+      "quote": "HR, 0.69; 95% CI, 0.49\u20130.97"
+    },
+    {
+      "chunk_id": "1df96772-7a11-4229-814f-8b5781a627fa",
+      "measure": "HR",
+      "est": 0.69,
+      "lo": 0.62,
+      "hi": 0.77,
+      "endpoint": "Disease-free survival",
+      "quote": "HR\u2009=\u20090.69, 95% CI\u2009=\u20090.62\u20130.77,\nP\n<\u20090.001"
+    },
+    {
+      "chunk_id": "9a4edafc-c3b3-490c-ab6f-4cfe3893c386",
+      "measure": "HR",
+      "est": 0.37,
+      "lo": 0.27,
+      "hi": 0.52,
+      "endpoint": "Progression-free survival",
+      "quote": "hazard ratio [HR], 0.37; 95% CI, 0.27 to 0.52;\nP\n< .001"
+    },
+    {
+      "chunk_id": "acdc467e-9221-4547-aa03-46f072e90bd9",
+      "measure": "HR",
+      "est": 0.46,
+      "lo": 0.34,
+      "hi": 0.62,
+      "endpoint": "Progression-free survival",
+      "quote": "HR was 0.46 (95% CI: 0.34\u20130.62;\nP\n<\u2005.00001"
+    },
+    {
+      "chunk_id": "bd43b88c-01cb-498f-a157-a156a1390260",
+      "measure": "HR",
+      "est": 0.75,
+      "lo": 0.68,
+      "hi": 0.83,
+      "endpoint": "Overall survival",
+      "quote": "HR 0.75, 95% CI 0.68\u20130.83, P\u2009<\u20090.00001"
+    },
+    {
+      "chunk_id": "156bb494-ab8b-41cc-b001-673d8ff4f79c",
+      "measure": "HR",
+      "est": 0.53,
+      "lo": 0.38,
+      "hi": 0.73,
+      "endpoint": "Mortality",
+      "quote": "hazard ratio, 0.53 [95% CI, 0.38 to 0.73]; two-sided\nP\n< .001"
+    }
+  ],
+  "e2_rerun_at": "2026-11-25T11:12:32"
+}

@@ -1,5 +1,6 @@
-import gc
+import asyncio
 import logging
+import threading
 import torch
 
 try:
@@ -27,6 +28,7 @@ class BGEM3RerankerClient(RerankerClient):
     """Real BGE-Reranker client using local GPU (CUDA) with memory optimization."""
 
     _reranker = None
+    _lock = threading.Lock()
 
     def __init__(self) -> None:
         if not _HAS_RERANKER:
@@ -42,30 +44,26 @@ class BGEM3RerankerClient(RerankerClient):
             logger.info("BGE-Reranker model loaded successfully.")
         self.reranker = BGEM3RerankerClient._reranker
 
-    async def rerank(self, query: str, passages: list[str]) -> list[float]:
-        """Compute relevance scores for a list of passages against a query."""
-        if not passages:
-            return []
-
-        logger.info(f"Reranking {len(passages)} passages against query: {query[:60]}...")
-        
+    def _score_sync(self, query: str, passages: list[str]) -> list[float]:
         sentence_pairs = [[query, passage] for passage in passages]
-        batch_size = 16
-        scores = []
-        
-        with torch.no_grad():
+        batch_size = 32
+        scores: list[float] = []
+        with BGEM3RerankerClient._lock, torch.no_grad():
             for i in range(0, len(sentence_pairs), batch_size):
                 batch = sentence_pairs[i : i + batch_size]
-                batch_scores = self.reranker.compute_score(batch, normalize=True)
-                
+                batch_scores = self.reranker.compute_score(batch, normalize=True, max_length=512)
                 if isinstance(batch_scores, list):
-                    scores.extend([float(s) for s in batch_scores])
+                    scores.extend(float(s) for s in batch_scores)
                 else:
                     scores.append(float(batch_scores))
-                    
-        # Release host RAM cache
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-
         return scores
+
+    async def rerank(self, query: str, passages: list[str]) -> list[float]:
+        """Compute cross-encoder relevance scores (0-1) for passages against a query.
+
+        Runs in a worker thread so GPU inference does not block the event loop.
+        """
+        if not passages:
+            return []
+        logger.info(f"Reranking {len(passages)} passages against query: {query[:60]}...")
+        return await asyncio.to_thread(self._score_sync, query, passages)

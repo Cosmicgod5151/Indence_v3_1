@@ -1,0 +1,1972 @@
+{
+  "generated_at": "2026-11-25T02:50:06",
+  "benchmark": "evals/gold_sets/retrieval_silver_v1.json",
+  "n_queries": 119,
+  "n_paraphrased": 88,
+  "modes": [
+    "sparse",
+    "dense",
+    "hybrid",
+    "hybrid_rerank",
+    "full"
+  ],
+  "all_queries": {
+    "sparse": {
+      "recall@5": {
+        "mean": 0.723,
+        "ci95": [
+          0.639,
+          0.798
+        ]
+      },
+      "recall@10": {
+        "mean": 0.807,
+        "ci95": [
+          0.731,
+          0.874
+        ]
+      },
+      "recall@20": {
+        "mean": 0.891,
+        "ci95": [
+          0.832,
+          0.941
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.609,
+        "ci95": [
+          0.533,
+          0.683
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.656,
+        "ci95": [
+          0.585,
+          0.726
+        ]
+      }
+    },
+    "dense": {
+      "recall@5": {
+        "mean": 0.824,
+        "ci95": [
+          0.756,
+          0.891
+        ]
+      },
+      "recall@10": {
+        "mean": 0.866,
+        "ci95": [
+          0.798,
+          0.924
+        ]
+      },
+      "recall@20": {
+        "mean": 0.908,
+        "ci95": [
+          0.849,
+          0.958
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.702,
+        "ci95": [
+          0.63,
+          0.77
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.742,
+        "ci95": [
+          0.676,
+          0.805
+        ]
+      }
+    },
+    "hybrid": {
+      "recall@5": {
+        "mean": 0.782,
+        "ci95": [
+          0.706,
+          0.849
+        ]
+      },
+      "recall@10": {
+        "mean": 0.882,
+        "ci95": [
+          0.824,
+          0.933
+        ]
+      },
+      "recall@20": {
+        "mean": 0.916,
+        "ci95": [
+          0.857,
+          0.958
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.688,
+        "ci95": [
+          0.614,
+          0.755
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.734,
+        "ci95": [
+          0.669,
+          0.793
+        ]
+      }
+    },
+    "hybrid_rerank": {
+      "recall@5": {
+        "mean": 0.916,
+        "ci95": [
+          0.857,
+          0.958
+        ]
+      },
+      "recall@10": {
+        "mean": 0.924,
+        "ci95": [
+          0.874,
+          0.966
+        ]
+      },
+      "recall@20": {
+        "mean": 0.941,
+        "ci95": [
+          0.891,
+          0.975
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.788,
+        "ci95": [
+          0.722,
+          0.849
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.822,
+        "ci95": [
+          0.764,
+          0.876
+        ]
+      }
+    },
+    "full": {
+      "recall@5": {
+        "mean": 0.798,
+        "ci95": [
+          0.723,
+          0.866
+        ]
+      },
+      "recall@10": {
+        "mean": 0.891,
+        "ci95": [
+          0.832,
+          0.941
+        ]
+      },
+      "recall@20": {
+        "mean": 0.916,
+        "ci95": [
+          0.857,
+          0.958
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.653,
+        "ci95": [
+          0.579,
+          0.723
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.71,
+        "ci95": [
+          0.644,
+          0.771
+        ]
+      }
+    }
+  },
+  "paraphrased_only": {
+    "sparse": {
+      "recall@5": {
+        "mean": 0.705,
+        "ci95": [
+          0.614,
+          0.795
+        ]
+      },
+      "recall@10": {
+        "mean": 0.795,
+        "ci95": [
+          0.705,
+          0.875
+        ]
+      },
+      "recall@20": {
+        "mean": 0.898,
+        "ci95": [
+          0.83,
+          0.955
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.6,
+        "ci95": [
+          0.512,
+          0.692
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.646,
+        "ci95": [
+          0.564,
+          0.731
+        ]
+      }
+    },
+    "dense": {
+      "recall@5": {
+        "mean": 0.807,
+        "ci95": [
+          0.727,
+          0.886
+        ]
+      },
+      "recall@10": {
+        "mean": 0.852,
+        "ci95": [
+          0.773,
+          0.92
+        ]
+      },
+      "recall@20": {
+        "mean": 0.898,
+        "ci95": [
+          0.83,
+          0.955
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.688,
+        "ci95": [
+          0.607,
+          0.769
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.728,
+        "ci95": [
+          0.651,
+          0.806
+        ]
+      }
+    },
+    "hybrid": {
+      "recall@5": {
+        "mean": 0.784,
+        "ci95": [
+          0.693,
+          0.864
+        ]
+      },
+      "recall@10": {
+        "mean": 0.864,
+        "ci95": [
+          0.795,
+          0.932
+        ]
+      },
+      "recall@20": {
+        "mean": 0.898,
+        "ci95": [
+          0.83,
+          0.955
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.684,
+        "ci95": [
+          0.599,
+          0.77
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.726,
+        "ci95": [
+          0.649,
+          0.804
+        ]
+      }
+    },
+    "hybrid_rerank": {
+      "recall@5": {
+        "mean": 0.898,
+        "ci95": [
+          0.83,
+          0.955
+        ]
+      },
+      "recall@10": {
+        "mean": 0.909,
+        "ci95": [
+          0.852,
+          0.966
+        ]
+      },
+      "recall@20": {
+        "mean": 0.932,
+        "ci95": [
+          0.875,
+          0.977
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.763,
+        "ci95": [
+          0.689,
+          0.84
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.799,
+        "ci95": [
+          0.732,
+          0.865
+        ]
+      }
+    },
+    "full": {
+      "recall@5": {
+        "mean": 0.795,
+        "ci95": [
+          0.716,
+          0.886
+        ]
+      },
+      "recall@10": {
+        "mean": 0.875,
+        "ci95": [
+          0.807,
+          0.943
+        ]
+      },
+      "recall@20": {
+        "mean": 0.909,
+        "ci95": [
+          0.841,
+          0.966
+        ]
+      },
+      "mrr@10": {
+        "mean": 0.62,
+        "ci95": [
+          0.538,
+          0.707
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.682,
+        "ci95": [
+          0.607,
+          0.758
+        ]
+      }
+    }
+  },
+  "latency_s": {
+    "sparse": {
+      "n": 119,
+      "p50": 0.167,
+      "p95": 0.21,
+      "mean": 0.173
+    },
+    "dense": {
+      "n": 119,
+      "p50": 0.223,
+      "p95": 0.363,
+      "mean": 0.233
+    },
+    "hybrid": {
+      "n": 119,
+      "p50": 0.236,
+      "p95": 0.28,
+      "mean": 0.235
+    },
+    "hybrid_rerank": {
+      "n": 119,
+      "p50": 1.504,
+      "p95": 1.61,
+      "mean": 1.501
+    },
+    "full": {
+      "n": 119,
+      "p50": 1.476,
+      "p95": 3.833,
+      "mean": 3.082
+    }
+  },
+  "modes_rerun": [
+    "full"
+  ],
+  "per_query": [
+    {
+      "id": "ret_001",
+      "question": "How does artificial intelligence compare to conventional radiologic imaging in diagnostic accuracy for differentiating low-grade from high-grade pancreatic neuroendocrine tumors?",
+      "relevant": "PMC13227626",
+      "paraphrased": true,
+      "ranks": {
+        "full": 4,
+        "sparse": 41,
+        "dense": 5,
+        "hybrid": 14,
+        "hybrid_rerank": 3
+      }
+    },
+    {
+      "id": "ret_002",
+      "question": "Does adding dual immune checkpoint blockade improve clinical outcomes compared to anti-PD-1 monotherapy in previously treated advanced squamous non-small cell lung cancer?",
+      "relevant": "PMC8283667",
+      "paraphrased": true,
+      "ranks": {
+        "full": null,
+        "sparse": null,
+        "dense": null,
+        "hybrid": null,
+        "hybrid_rerank": null
+      }
+    },
+    {
+      "id": "ret_003",
+      "question": "What is the long-term survival impact of adding neoadjuvant chemoradiotherapy before surgical resection in patients with locally advanced esophageal squamous cell carcinoma?",
+      "relevant": "PMC8223138",
+      "paraphrased": false,
+      "ranks": {
+        "full": 3,
+        "sparse": 14,
+        "dense": 11,
+        "hybrid": 8,
+        "hybrid_rerank": 4
+      }
+    },
+    {
+      "id": "ret_004",
+      "question": "What is the diagnostic accuracy of circulating microRNA-21 as a non-invasive screening biomarker for esophageal carcinoma in Asian patient populations?",
+      "relevant": "PMC9528905",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 10,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_005",
+      "question": "Does a mobile digital support tool improve health-related quality of life and reduce psychological distress in patients undergoing breast cancer treatment?",
+      "relevant": "PMC12507968",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 5,
+        "dense": null,
+        "hybrid": 6,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_006",
+      "question": "Does a structured post-surgical home nursing intervention reduce symptom severity and caregiver burden in patients recovering from primary brain tumor resection?",
+      "relevant": "PMC11026272",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_007",
+      "question": "Does adherence to a Mediterranean or healthy dietary pattern decrease the incidence and overall risk of developing gastric cancer?",
+      "relevant": "PMC11781554",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_008",
+      "question": "Is topical methylene blue effective for controlling severe oral mucositis pain in cancer patients undergoing radiation or chemotherapy?",
+      "relevant": "PMC9632023",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_009",
+      "question": "How does the expression of hypoxia-inducible factor alpha subunits correlate with clinicopathological characteristics and aggressiveness in papillary thyroid carcinoma?",
+      "relevant": "PMC10270558",
+      "paraphrased": true,
+      "ranks": {
+        "full": null,
+        "sparse": null,
+        "dense": null,
+        "hybrid": null,
+        "hybrid_rerank": null
+      }
+    },
+    {
+      "id": "ret_010",
+      "question": "Does a post-operative supervised exercise program improve quality of life and functional recovery in patients undergoing surgical resection for esophageal cancer?",
+      "relevant": "PMC10364897",
+      "paraphrased": true,
+      "ranks": {
+        "full": 7,
+        "sparse": 7,
+        "dense": 4,
+        "hybrid": 4,
+        "hybrid_rerank": 7
+      }
+    },
+    {
+      "id": "ret_011",
+      "question": "For laparoscopic colorectal surgery, does a lateral quadratus lumborum block reduce intraoperative remifentanil compared to a transversus abdominis plane block?",
+      "relevant": "PMC12309112",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_012",
+      "question": "In first-line PD-L1-positive advanced gastric adenocarcinoma, is pembrolizumab associated with similar quality of life compared to chemotherapy?",
+      "relevant": "PMC8358416",
+      "paraphrased": true,
+      "ranks": {
+        "full": 5,
+        "sparse": 1,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_013",
+      "question": "For early bladder cancer recurrence after TURBT, is MRI more accurate than MDCT in detecting recurrence and differentiating benign changes?",
+      "relevant": "PMC9844434",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_014",
+      "question": "Does exergame rehabilitation improve quality of life, particularly physical function, for cancer patients recovering from abdominal surgery?",
+      "relevant": "PMC11564271",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_015",
+      "question": "Can a digital information tool reduce distress and enhance understanding for women with breast cancer undergoing radiotherapy?",
+      "relevant": "PMC12343666",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_016",
+      "question": "Does bundling colorectal cancer screening outreach with social risk screening increase cancer screening rates in FQHC populations?",
+      "relevant": "PMC11116362",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_017",
+      "question": "For NSCLC with malignant pleural effusion, is intrapleural endostar combined with cisplatin effective and safe?",
+      "relevant": "PMC9803422",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_018",
+      "question": "For elderly resected NSCLC patients, does alternate-day S-1 reduce GI side effects while maintaining efficacy compared to daily S-1?",
+      "relevant": "PMC10198543",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_019",
+      "question": "In anxious/depressed adults with advanced cancer, does a remote Valued Living intervention improve advance care planning and well-being?",
+      "relevant": "PMC12997518",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_020",
+      "question": "What strategies are effective for implementing an electronic patient-reported outcomes-based symptom management program across multiple cancer centers?",
+      "relevant": "PMC11558981",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 5,
+        "dense": 3,
+        "hybrid": 3,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_021",
+      "question": "In patients with advanced hepatocellular carcinoma, does adding anlotinib to combination systemic therapy improve overall survival and response rates?",
+      "relevant": "PMC12536109",
+      "paraphrased": true,
+      "ranks": {
+        "full": 4,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_022",
+      "question": "Does adjuvant chemotherapy improve overall survival in patients with node-positive invasive intraductal papillary mucinous neoplasms following surgical resection?",
+      "relevant": "PMC8677688",
+      "paraphrased": true,
+      "ranks": {
+        "full": 4,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_023",
+      "question": "How do different paclitaxel-based chemoradiotherapy combinations compare regarding survival and toxicity in locally advanced esophageal squamous cell carcinoma?",
+      "relevant": "PMC8861838",
+      "paraphrased": false,
+      "ranks": {
+        "full": 2,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_024",
+      "question": "Does proton beam radiation therapy provide better tumor control or hearing preservation than stereotactic radiosurgery in patients with vestibular schwannomas?",
+      "relevant": "PMC10319703",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_025",
+      "question": "What patient and laboratory risk factors increase the incidence of catheter-related venous thrombosis in individuals with breast cancer?",
+      "relevant": "PMC11322883",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 2,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_026",
+      "question": "Does stereotactic body radiotherapy improve toxicity and patient-reported outcomes compared to conventionally fractionated radiation in localized prostate cancer?",
+      "relevant": "PMC8774487",
+      "paraphrased": true,
+      "ranks": {
+        "full": 15,
+        "sparse": 15,
+        "dense": 20,
+        "hybrid": 11,
+        "hybrid_rerank": 16
+      }
+    },
+    {
+      "id": "ret_027",
+      "question": "How do non-embolization locoregional therapies compare to transarterial embolization techniques in improving outcomes for localized hepatocellular carcinoma?",
+      "relevant": "PMC12527482",
+      "paraphrased": true,
+      "ranks": {
+        "full": 5,
+        "sparse": 10,
+        "dense": 4,
+        "hybrid": 6,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_028",
+      "question": "Which clinical characteristics and histological response patterns predict local recurrence and overall disease progression in patients treated for osteosarcoma?",
+      "relevant": "PMC8900028",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 6,
+        "dense": 7,
+        "hybrid": 10,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_029",
+      "question": "Is integrating community health workers into collaborative care models effective for remote pain management in patients undergoing cancer treatment?",
+      "relevant": "PMC12248872",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_030",
+      "question": "In early-stage breast cancer, does hypofractionated whole-breast irradiation with intraoperative electron boost show comparable toxicity to conventional whole-breast radiation?",
+      "relevant": "PMC8552001",
+      "paraphrased": true,
+      "ranks": {
+        "full": 5,
+        "sparse": 2,
+        "dense": 2,
+        "hybrid": 2,
+        "hybrid_rerank": 5
+      }
+    },
+    {
+      "id": "ret_031",
+      "question": "Does enzalutamide improve survival and delay disease progression in Asian men with chemotherapy-na\u00efve metastatic castration-resistant prostate cancer?",
+      "relevant": "PMC9123068",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_032",
+      "question": "Is the denosumab biosimilar QL1206 as effective and safe as denosumab for patients with bone metastases from solid tumors?",
+      "relevant": "PMC9971153",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_033",
+      "question": "What is the prognostic impact of surgery and chemotherapy on survival outcomes for patients diagnosed with small cell breast carcinoma?",
+      "relevant": "PMC9013885",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 3,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_034",
+      "question": "Does combining case-based learning with multidisciplinary team teaching improve educational outcomes for students in liver cancer training?",
+      "relevant": "PMC13188650",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_035",
+      "question": "Does a peer support intervention improve self-efficacy in young adult cancer survivors compared to usual care?",
+      "relevant": "PMC12105318",
+      "paraphrased": false,
+      "ranks": {
+        "full": 2,
+        "sparse": 2,
+        "dense": 2,
+        "hybrid": 2,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_036",
+      "question": "Does coenzyme Q10 at 300 mg/day alter doxorubicin pharmacokinetics or tolerability in breast cancer patients?",
+      "relevant": "PMC12638730",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_037",
+      "question": "What are the comparative efficacy and toxicity profiles of different local salvage therapies for radiorecurrent prostate cancer?",
+      "relevant": "PMC10262981",
+      "paraphrased": true,
+      "ranks": {
+        "full": null,
+        "sparse": null,
+        "dense": null,
+        "hybrid": null,
+        "hybrid_rerank": null
+      }
+    },
+    {
+      "id": "ret_038",
+      "question": "Can moderate strength training combined with whole-body vibration prevent chemotherapy-induced peripheral neuropathy in breast cancer patients?",
+      "relevant": "PMC12537586",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 2,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_039",
+      "question": "Is an increased Controlling Nutritional Status (CONUT) score associated with poorer prognosis in patients with gynecological cancer?",
+      "relevant": "PMC10329389",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 2,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_040",
+      "question": "Does adding carboplatin to standard neoadjuvant chemotherapy improve pathological complete response rates in triple-negative breast cancer?",
+      "relevant": "PMC10504209",
+      "paraphrased": true,
+      "ranks": {
+        "full": 3,
+        "sparse": null,
+        "dense": 23,
+        "hybrid": 28,
+        "hybrid_rerank": 11
+      }
+    },
+    {
+      "id": "ret_041",
+      "question": "Does a mailed training intervention for primary care physicians increase FOBT prescription for colorectal cancer screening?",
+      "relevant": "PMC13249137",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 1,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_042",
+      "question": "What are the barriers to implementing digital nutrition care for head and neck cancer patients during treatment?",
+      "relevant": "PMC12522967",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_043",
+      "question": "Can C-reactive protein predict survival outcomes in patients with advanced urothelial carcinoma treated with immunotherapy?",
+      "relevant": "PMC11219184",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 19,
+        "dense": null,
+        "hybrid": 44,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_044",
+      "question": "Does adding HIPEC to secondary cytoreductive surgery improve survival for platinum-sensitive recurrent ovarian cancer patients?",
+      "relevant": "PMC12604396",
+      "paraphrased": true,
+      "ranks": {
+        "full": 6,
+        "sparse": 2,
+        "dense": 3,
+        "hybrid": 2,
+        "hybrid_rerank": 3
+      }
+    },
+    {
+      "id": "ret_045",
+      "question": "Does pranayama breathing exercise reduce chemotherapy-induced symptom burden in women with breast cancer?",
+      "relevant": "PMC12228286",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_046",
+      "question": "Is it feasible and worthwhile to include environmental impacts in the cost analysis of melanoma surveillance?",
+      "relevant": "PMC9834124",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_047",
+      "question": "Is pretreatment modified Glasgow Prognostic Score a reliable prognostic indicator for patients with small cell lung cancer?",
+      "relevant": "PMC10637526",
+      "paraphrased": false,
+      "ranks": {
+        "full": null,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_048",
+      "question": "Does a DVD combined with patient navigation increase colorectal cancer screening uptake in rural women?",
+      "relevant": "PMC11341775",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 3,
+        "dense": 2,
+        "hybrid": 2,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_049",
+      "question": "Is photobiomodulation effective for preventing or treating methotrexate-induced oral mucositis in pediatric hematologic cancer patients?",
+      "relevant": "PMC12049046",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 1,
+        "dense": 6,
+        "hybrid": 3,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_050",
+      "question": "Do educational and supportive programs improve preparedness to care for family caregivers of cancer patients?",
+      "relevant": "PMC9028302",
+      "paraphrased": false,
+      "ranks": {
+        "full": 5,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_051",
+      "question": "Does chemoradiotherapy increase sensorineural hearing loss risk more than radiotherapy alone in head and neck cancer patients?",
+      "relevant": "PMC12895599",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_052",
+      "question": "Does physical activity improve health-related quality of life or reduce fatigue in colorectal cancer survivors?",
+      "relevant": "PMC11952013",
+      "paraphrased": true,
+      "ranks": {
+        "full": 13,
+        "sparse": 17,
+        "dense": 2,
+        "hybrid": 4,
+        "hybrid_rerank": 3
+      }
+    },
+    {
+      "id": "ret_053",
+      "question": "Which specific gene alterations are associated with worse overall or disease-free survival in colorectal cancer patients?",
+      "relevant": "PMC9402361",
+      "paraphrased": true,
+      "ranks": {
+        "full": 5,
+        "sparse": 9,
+        "dense": null,
+        "hybrid": 33,
+        "hybrid_rerank": 4
+      }
+    },
+    {
+      "id": "ret_054",
+      "question": "Do preventive swallowing exercises during head and neck cancer radiotherapy improve swallowing safety or quality of life outcomes?",
+      "relevant": "PMC9345844",
+      "paraphrased": false,
+      "ranks": {
+        "full": 8,
+        "sparse": 2,
+        "dense": 7,
+        "hybrid": 6,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_055",
+      "question": "Can perioperative pregabalin and esketamine combination therapy prevent chronic pain after breast cancer surgery?",
+      "relevant": "PMC10259464",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_056",
+      "question": "Is laparoscopic distal gastrectomy feasible and safe for clinical T4a gastric cancer compared to open surgery?",
+      "relevant": "PMC12613089",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 6,
+        "dense": 2,
+        "hybrid": 3,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_057",
+      "question": "What patient and clinical factors predict overall survival in patients with limited-stage small cell lung cancer?",
+      "relevant": "PMC11581554",
+      "paraphrased": false,
+      "ranks": {
+        "full": null,
+        "sparse": null,
+        "dense": null,
+        "hybrid": null,
+        "hybrid_rerank": null
+      }
+    },
+    {
+      "id": "ret_058",
+      "question": "What cancer treatments significantly increase the risk of fertility impairment in female childhood and adolescent survivors?",
+      "relevant": "PMC13088620",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_059",
+      "question": "Can an intelligent image diagnosis system improve quality of life for advanced lung cancer patients receiving nursing intervention?",
+      "relevant": "PMC8608502",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_060",
+      "question": "Which immunotherapy-based combination offers superior overall survival for first-line metastatic urothelial cancer patients?",
+      "relevant": "PMC11352654",
+      "paraphrased": true,
+      "ranks": {
+        "full": 12,
+        "sparse": 33,
+        "dense": 14,
+        "hybrid": 10,
+        "hybrid_rerank": 3
+      }
+    },
+    {
+      "id": "ret_061",
+      "question": "Does oral methylcobalamin reduce severe hand-foot syndrome in HER2 negative early breast cancer patients receiving adjuvant capecitabine?",
+      "relevant": "PMC12423938",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_062",
+      "question": "What factors influence total hospital expenses for breast cancer surgery, and which model best predicts these costs?",
+      "relevant": "PMC8667393",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_063",
+      "question": "Is modified gasless trans-axillary endoscopic thyroidectomy superior to traditional for papillary thyroid microcarcinoma regarding outcomes and scars?",
+      "relevant": "PMC10469731",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_064",
+      "question": "Can propolis supplementation reduce serum levels of inflammatory markers like IL-6, CRP, and TNF-\u03b1?",
+      "relevant": "PMC11316998",
+      "paraphrased": true,
+      "ranks": {
+        "full": null,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_065",
+      "question": "Does a Noddings\u2019 caring theory-based intervention improve death coping and psychological well-being in advanced lung cancer patients?",
+      "relevant": "PMC13156160",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_066",
+      "question": "Is adherence to multiple healthy lifestyle factors associated with improved psychosocial outcomes among cancer survivors?",
+      "relevant": "PMC13144231",
+      "paraphrased": true,
+      "ranks": {
+        "full": 3,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_067",
+      "question": "Do early-onset oesophageal adenocarcinoma patients have different survival outcomes compared to older patients?",
+      "relevant": "PMC11525870",
+      "paraphrased": true,
+      "ranks": {
+        "full": 3,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_068",
+      "question": "Is intraoperative radiotherapy boost with whole breast irradiation superior to conventional radiotherapy for early-stage breast cancer survival?",
+      "relevant": "PMC10625949",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 16,
+        "dense": 2,
+        "hybrid": 8,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_069",
+      "question": "Which dyspnea scales are valid and concordant for assessing breathlessness in operable early-stage lung cancer patients?",
+      "relevant": "PMC12048451",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_070",
+      "question": "Can a radiomics nomogram predict overall survival in patients with combined hepatocellular carcinoma and cholangiocarcinoma after resection?",
+      "relevant": "PMC8613648",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_071",
+      "question": "What clinical factors predict lung metastasis or overall survival in young patients diagnosed with osteosarcoma?",
+      "relevant": "PMC9626197",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 3,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 3
+      }
+    },
+    {
+      "id": "ret_072",
+      "question": "Does training healthcare providers in Kaposi Sarcoma diagnosis and care improve patient retention in care and provider confidence?",
+      "relevant": "PMC9418419",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_073",
+      "question": "Does cognitive-behavioral intervention reduce anxiety and depression and improve quality of life in children with hematological cancer?",
+      "relevant": "PMC11743426",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 17,
+        "dense": 3,
+        "hybrid": 4,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_074",
+      "question": "Does perioperative infusional 5-FU improve overall or disease-free survival in patients with resected Dukes' B2, B3, or C colon cancer?",
+      "relevant": "PMC9807536",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_075",
+      "question": "Does radical lymphadenectomy improve overall survival and safety for colorectal cancer patients with para-aortic lymph node metastasis?",
+      "relevant": "PMC9107112",
+      "paraphrased": true,
+      "ranks": {
+        "full": 4,
+        "sparse": 4,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_076",
+      "question": "In rectal cancer patients, does lateral lymph node metastasis on pretreatment MRI predict local recurrence after neoadjuvant chemoradiation and surgery?",
+      "relevant": "PMC11737601",
+      "paraphrased": true,
+      "ranks": {
+        "full": 6,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_077",
+      "question": "Does a customizable educational brochure improve breast cancer patients' knowledge about their diagnosis and treatment compared to a standard brochure?",
+      "relevant": "PMC10417173",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_078",
+      "question": "What is the clinicopathologic and prognostic relevance of EpCAM and CD44 expression in patients with pancreatic cancer?",
+      "relevant": "PMC12392593",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_079",
+      "question": "How does initial PSA level below 3 ng/mL influence prostate cancer risk and optimal screening intervals in men?",
+      "relevant": "PMC10087780",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_080",
+      "question": "Does omitting axillary surgery in early breast cancer patients with negative lymph nodes affect recurrence, overall, or disease-free survival?",
+      "relevant": "PMC12999590",
+      "paraphrased": false,
+      "ranks": {
+        "full": 6,
+        "sparse": 7,
+        "dense": 1,
+        "hybrid": 3,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_081",
+      "question": "Can sleep behavioral therapy effectively reduce headache burden in breast cancer survivors?",
+      "relevant": "PMC8578351",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_082",
+      "question": "Is personalized breast cancer risk estimation, including breast density and PRS, well-accepted and psychologically safe for women?",
+      "relevant": "PMC12342814",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_083",
+      "question": "Can telehealth improve quality of life and alleviate symptom burden for advanced cancer patients receiving palliative care?",
+      "relevant": "PMC13136543",
+      "paraphrased": true,
+      "ranks": {
+        "full": 6,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_084",
+      "question": "Does SIB-RT with concurrent oral S-1 chemotherapy improve survival for elderly patients with inoperable esophageal squamous cell carcinoma?",
+      "relevant": "PMC10193185",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_085",
+      "question": "Are tyrosine kinase inhibitors effective in improving outcomes for patients with advanced or metastatic sarcomas after prior chemotherapy?",
+      "relevant": "PMC10939701",
+      "paraphrased": false,
+      "ranks": {
+        "full": 9,
+        "sparse": 2,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_086",
+      "question": "Can massage therapy effectively relieve cancer pain in patients with hematological malignancies, breast cancer, or digestive system cancers?",
+      "relevant": "PMC10328622",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_087",
+      "question": "Do PET-derived parameters predict overall and biochemical progression-free survival in metastatic castration-resistant prostate cancer patients on ARTA?",
+      "relevant": "PMC11090858",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 11,
+        "dense": 3,
+        "hybrid": 4,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_088",
+      "question": "Is a high platelet-to-lymphocyte ratio associated with poor outcomes in breast cancer patients receiving neoadjuvant chemotherapy?",
+      "relevant": "PMC10668253",
+      "paraphrased": true,
+      "ranks": {
+        "full": 24,
+        "sparse": 11,
+        "dense": null,
+        "hybrid": 37,
+        "hybrid_rerank": 23
+      }
+    },
+    {
+      "id": "ret_089",
+      "question": "Can machine learning models accurately predict survival and guide personalized treatment decisions for patients with early-stage hepatocellular carcinoma?",
+      "relevant": "PMC10637529",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 27,
+        "dense": 1,
+        "hybrid": 6,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_090",
+      "question": "Does a home-based exercise and self-management program improve physical function or quality of life after lung cancer resection?",
+      "relevant": "PMC11612835",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_091",
+      "question": "Can combined text message and postal reminders improve participation rates in colorectal cancer screening programs?",
+      "relevant": "PMC11736219",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_092",
+      "question": "Which frailty instruments best predict postoperative complications, readmission, or mortality in cancer patients undergoing surgery?",
+      "relevant": "PMC13281656",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 7,
+        "dense": 1,
+        "hybrid": 2,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_093",
+      "question": "What factors influence peaceful acceptance of illness among older adults living with advanced cancer?",
+      "relevant": "PMC12967279",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_094",
+      "question": "Can yoga intervention improve fatigue, pain, sleep disturbance, and quality of life for breast cancer patients on adjuvant chemotherapy?",
+      "relevant": "PMC12990628",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_095",
+      "question": "What are the patient-reported tolerability and symptomatic adverse events of adavosertib combined with gemcitabine in ovarian cancer?",
+      "relevant": "PMC10731422",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_096",
+      "question": "Does negative pressure wound therapy reduce surgical site infections and other complications compared to conventional care in cancer surgical wounds?",
+      "relevant": "PMC9493220",
+      "paraphrased": true,
+      "ranks": {
+        "full": 6,
+        "sparse": 3,
+        "dense": 7,
+        "hybrid": 4,
+        "hybrid_rerank": 4
+      }
+    },
+    {
+      "id": "ret_097",
+      "question": "Does adding dexmedetomidine to ropivacaine for TAP block reduce perioperative neurocognitive disorders after colorectal cancer surgery?",
+      "relevant": "PMC11127451",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_098",
+      "question": "Does developing depression or using prophylactic antidepressants impact overall survival in head and neck cancer patients?",
+      "relevant": "PMC10321851",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_099",
+      "question": "Is pretreatment skeletal muscle index a reliable prognostic factor for survival in patients with pancreatic carcinoma?",
+      "relevant": "PMC10174348",
+      "paraphrased": true,
+      "ranks": {
+        "full": null,
+        "sparse": null,
+        "dense": null,
+        "hybrid": null,
+        "hybrid_rerank": null
+      }
+    },
+    {
+      "id": "ret_100",
+      "question": "What is the incidence of central nervous system metastases in HER2-positive metastatic breast cancer patients receiving trastuzumab?",
+      "relevant": "PMC8341052",
+      "paraphrased": false,
+      "ranks": {
+        "full": 6,
+        "sparse": 27,
+        "dense": 1,
+        "hybrid": 13,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_101",
+      "question": "Does radioactive iodine therapy increase the risk of secondary hematologic malignancies, particularly leukemia, in differentiated thyroid cancer patients?",
+      "relevant": "PMC12527754",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_102",
+      "question": "Does platinum-based adjuvant therapy improve pathologic complete response and recurrence-free survival in triple-negative breast cancer patients?",
+      "relevant": "PMC9601551",
+      "paraphrased": true,
+      "ranks": {
+        "full": null,
+        "sparse": 32,
+        "dense": null,
+        "hybrid": null,
+        "hybrid_rerank": null
+      }
+    },
+    {
+      "id": "ret_103",
+      "question": "Does adding ramucirumab to erlotinib improve progression-free survival in untreated EGFR-mutated metastatic non-small cell lung cancer?",
+      "relevant": "PMC8763844",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 1,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_104",
+      "question": "Is pathologic complete response a reliable surrogate endpoint for disease-free or overall survival in rectal cancer patients?",
+      "relevant": "PMC12268488",
+      "paraphrased": true,
+      "ranks": {
+        "full": 7,
+        "sparse": 3,
+        "dense": 17,
+        "hybrid": 5,
+        "hybrid_rerank": 4
+      }
+    },
+    {
+      "id": "ret_105",
+      "question": "Can MRI-radiomics models accurately predict MGMT promoter methylation status in patients with grade IV gliomas for clinical use?",
+      "relevant": "PMC11364578",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_106",
+      "question": "Is fam-trastuzumab deruxtecan-nxki an effective treatment option for heavily pretreated HER2-positive metastatic breast cancer?",
+      "relevant": "PMC8570919",
+      "paraphrased": true,
+      "ranks": {
+        "full": 6,
+        "sparse": 10,
+        "dense": 2,
+        "hybrid": 4,
+        "hybrid_rerank": 5
+      }
+    },
+    {
+      "id": "ret_107",
+      "question": "Does abemaciclib improve survival outcomes compared to chemotherapy in previously treated metastatic pancreatic adenocarcinoma?",
+      "relevant": "PMC10652308",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 24,
+        "dense": 4,
+        "hybrid": 6,
+        "hybrid_rerank": 3
+      }
+    },
+    {
+      "id": "ret_108",
+      "question": "Does neoadjuvant dual HER2 blockade with trastuzumab and lapatinib improve survival in high-risk HER2-positive early breast cancer?",
+      "relevant": "PMC8917305",
+      "paraphrased": true,
+      "ranks": {
+        "full": 22,
+        "sparse": 14,
+        "dense": 11,
+        "hybrid": 14,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_109",
+      "question": "For thoracoscopic lung cancer resection, does perineural dexamethasone in TTPB provide superior analgesia compared to intravenous administration?",
+      "relevant": "PMC12474666",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_110",
+      "question": "How effective is aerobic exercise in reducing depression and anxiety among lung cancer survivors, and what prescription is recommended?",
+      "relevant": "PMC12191834",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_111",
+      "question": "What are the optimal methods for prescribing and reporting resistance training adherence in colon cancer patients receiving adjuvant chemotherapy?",
+      "relevant": "PMC11096063",
+      "paraphrased": true,
+      "ranks": {
+        "full": 5,
+        "sparse": 5,
+        "dense": 4,
+        "hybrid": 4,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_112",
+      "question": "Does integrating narrative therapy and resilience training improve postoperative recovery and survival in patients undergoing low rectal cancer resection?",
+      "relevant": "PMC12634408",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_113",
+      "question": "Can mobile health-guided diet and exercise behavioral interventions improve lifestyle outcomes in patients with chronic lymphocytic leukemia?",
+      "relevant": "PMC11956799",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 5,
+        "dense": 1,
+        "hybrid": 2,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_114",
+      "question": "How does robotic nipple-sparing mastectomy compare with conventional techniques regarding complication rates and surgical safety in early breast cancer?",
+      "relevant": "PMC13289468",
+      "paraphrased": true,
+      "ranks": {
+        "full": 5,
+        "sparse": 11,
+        "dense": 8,
+        "hybrid": 8,
+        "hybrid_rerank": 5
+      }
+    },
+    {
+      "id": "ret_115",
+      "question": "Does adding dexmedetomidine to ropivacaine in thoracic paravertebral blocks enhance postoperative analgesia following thoracoscopic lung cancer surgery?",
+      "relevant": "PMC12064592",
+      "paraphrased": true,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 2,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_116",
+      "question": "What are the postoperative risks and recommended surgical strategies for lung cancer resection in patients with underlying usual interstitial pneumonia?",
+      "relevant": "PMC10032402",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": 1,
+        "dense": 4,
+        "hybrid": 1,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_117",
+      "question": "Can computed tomography radiomics accurately predict epidermal growth factor receptor mutation status in non-small cell lung cancer noninvasively?",
+      "relevant": "PMC10380456",
+      "paraphrased": true,
+      "ranks": {
+        "full": 2,
+        "sparse": 2,
+        "dense": 1,
+        "hybrid": 1,
+        "hybrid_rerank": 2
+      }
+    },
+    {
+      "id": "ret_118",
+      "question": "Does volume-based image-guided brachytherapy improve clinical outcomes compared to traditional point-A brachytherapy in cervical cancer treatment?",
+      "relevant": "PMC10042219",
+      "paraphrased": true,
+      "ranks": {
+        "full": 4,
+        "sparse": 10,
+        "dense": 2,
+        "hybrid": 8,
+        "hybrid_rerank": 1
+      }
+    },
+    {
+      "id": "ret_119",
+      "question": "Is elevated expression of long noncoding RNA small nucleolar RNA host genes associated with poor prognosis in hepatocellular carcinoma?",
+      "relevant": "PMC11024508",
+      "paraphrased": false,
+      "ranks": {
+        "full": 1,
+        "sparse": null,
+        "dense": 2,
+        "hybrid": 9,
+        "hybrid_rerank": 2
+      }
+    }
+  ],
+  "notes": "Document-level known-item evaluation; silver labels (one relevant paper per question) make these lower bounds. 'full' excludes papers removed by the population hard filter."
+}

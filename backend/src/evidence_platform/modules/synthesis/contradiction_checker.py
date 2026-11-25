@@ -208,8 +208,9 @@ class ContradictionChecker:
             if any(re.search(p, getattr(c, "text", "").lower()) for p in _UNCERTAINTY_PATTERNS)
         ]
 
-        if benefit_cands and uncertainty_cands:
-            cand_a, cand_b = benefit_cands[0], uncertainty_cands[0]
+        pair = self._first_distinct_pair(benefit_cands, uncertainty_cands)
+        if pair:
+            cand_a, cand_b = pair
             pair_key = self._pair_key(cand_a, cand_b)
             if pair_key not in _seen_pairs:
                 _seen_pairs.add(pair_key)
@@ -224,8 +225,11 @@ class ContradictionChecker:
             guide_oc = [o for o in outcomes if o["has_guideline_restriction"]]
             hr_vals = [h for o in outcomes for h in o["hr_values"]]
 
-            if benefit_oc and uncert_oc:
-                ca, cb = benefit_oc[0]["candidate"], uncert_oc[0]["candidate"]
+            pair = self._first_distinct_pair(
+                [o["candidate"] for o in benefit_oc], [o["candidate"] for o in uncert_oc]
+            )
+            if pair:
+                ca, cb = pair
                 pk = self._pair_key(ca, cb)
                 if pk not in _seen_pairs:
                     _seen_pairs.add(pk)
@@ -233,11 +237,17 @@ class ContradictionChecker:
                         self._build_efficacy_contradiction(ca, cb)
                     )
 
-            if benefit_oc and guide_oc:
-                ca, cb = benefit_oc[0]["candidate"], guide_oc[0]["candidate"]
-                contradictions_found.append(
-                    self._build_guideline_contradiction(ca, cb)
-                )
+            pair = self._first_distinct_pair(
+                [o["candidate"] for o in benefit_oc], [o["candidate"] for o in guide_oc]
+            )
+            if pair:
+                ca, cb = pair
+                pk = self._pair_key(ca, cb)
+                if pk not in _seen_pairs:
+                    _seen_pairs.add(pk)
+                    contradictions_found.append(
+                        self._build_guideline_contradiction(ca, cb)
+                    )
 
             if len(hr_vals) >= 2 and min(hr_vals) < 0.7 and max(hr_vals) > 0.9:
                 min_o = next(
@@ -248,12 +258,15 @@ class ContradictionChecker:
                     (o for o in outcomes if any(abs(h - max(hr_vals)) < 0.001 for h in o["hr_values"])),
                     outcomes[-1],
                 )
-                contradictions_found.append(
-                    self._build_hr_contradiction(
-                        min_o["candidate"], max_o["candidate"],
-                        min(hr_vals), max(hr_vals),
+                pk = self._pair_key(min_o["candidate"], max_o["candidate"])
+                if not self._same_source(min_o["candidate"], max_o["candidate"]) and pk not in _seen_pairs:
+                    _seen_pairs.add(pk)
+                    contradictions_found.append(
+                        self._build_hr_contradiction(
+                            min_o["candidate"], max_o["candidate"],
+                            min(hr_vals), max(hr_vals),
+                        )
                     )
-                )
 
         # ── 4. Consensus summary ──────────────────────────────────────
         if not contradictions_found:
@@ -274,6 +287,22 @@ class ContradictionChecker:
             "contradictions": contradictions_found,
             "consensus_summary": " ".join(consensus_statements),
         }
+
+    @staticmethod
+    def _same_source(a: Any, b: Any) -> bool:
+        """Two passages from the same paper (or the same chunk) cannot contradict each other."""
+        if a is b or getattr(a, "chunk_id", None) == getattr(b, "chunk_id", object()):
+            return True
+        pa, pb = getattr(a, "pmcid", None), getattr(b, "pmcid", None)
+        return bool(pa) and pa == pb
+
+    @classmethod
+    def _first_distinct_pair(cls, side_a: list[Any], side_b: list[Any]) -> tuple[Any, Any] | None:
+        for a in side_a:
+            for b in side_b:
+                if not cls._same_source(a, b):
+                    return a, b
+        return None
 
     # ================================================================== #
     #  Contradiction builders (fully dynamic — no templates)              #

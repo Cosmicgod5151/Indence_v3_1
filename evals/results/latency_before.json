@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-11-25T00:58:30",
+  "source": "backend/evidence_platform.db :: retrieval_traces (pre-fix runs)",
+  "note": "total_e2e_s in the old code summed the timed stages (not wall clock).",
+  "n_traces": 52,
+  "summary": {
+    "retrieval_s": {
+      "n": 52,
+      "p50": 3.861,
+      "p95": 10.092,
+      "mean": 4.492
+    },
+    "context_assembly_s": {
+      "n": 40,
+      "p50": 5.762,
+      "p95": 7.826,
+      "mean": 6.425
+    },
+    "synthesis_s": {
+      "n": 52,
+      "p50": 34.813,
+      "p95": 96.346,
+      "mean": 39.188
+    },
+    "grounding_s": {
+      "n": 52,
+      "p50": 1.723,
+      "p95": 7.839,
+      "mean": 2.312
+    },
+    "total_e2e_s": {
+      "n": 52,
+      "p50": 48.8,
+      "p95": 110.395,
+      "mean": 52.551
+    }
+  }
+}

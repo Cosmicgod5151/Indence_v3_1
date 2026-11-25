@@ -68,7 +68,7 @@ class TestAbstentionLayer(unittest.TestCase):
         
         self.assertEqual(status, "insufficient_evidence")
         self.assertEqual(len(verified), 0)
-        self.assertIn("direct contradiction", reason)
+        self.assertIn("contradict their own cited sources", reason)
 
 
 if __name__ == "__main__":

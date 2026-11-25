@@ -82,6 +82,24 @@ class QueryNormalizer:
         "kn-177": ["KEYNOTE-177"],
     }
 
+    # Short acronyms that collide with ordinary English words or with receptor
+    # status tokens (e.g. "or", "os", "HR" in "HR+"). These are expanded only
+    # when the user typed them in UPPERCASE as a standalone token.
+    AMBIGUOUS_ACRONYMS: frozenset[str] = frozenset(
+        {"or", "os", "hr", "rr", "ci", "mi", "rt", "nac", "dxd"}
+    )
+
+    # A clinical token: letters/digits/hyphens, optionally ending in "+" (HER2+, HR+).
+    _TOKEN_RE = re.compile(r"(?<![\w+-])[A-Za-z0-9][A-Za-z0-9-]*\+?(?![\w])")
+
+    def _expansion_for(self, token: str) -> str | None:
+        key = token.lower()
+        if key not in self.ONCOLOGY_DICTIONARY:
+            return None
+        if key in self.AMBIGUOUS_ACRONYMS and not token.isupper():
+            return None
+        return self.ONCOLOGY_DICTIONARY[key]
+
     def normalize(self, query: str) -> NormalizedQuery:
         """Clean query, expand acronyms, and produce rewritten clinical query variants."""
         if not query:
@@ -91,23 +109,22 @@ class QueryNormalizer:
         cleaned = unicodedata.normalize("NFKC", query)
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
-        # 2. Case-insensitive acronym and term expansion
-        words = re.findall(r"\b[\w+-]+\b", cleaned)
-        expanded = {}
-
-        normalized_text = cleaned
-        for word in words:
-            word_lower = word.lower()
-            if word_lower in self.ONCOLOGY_DICTIONARY:
-                expansion = self.ONCOLOGY_DICTIONARY[word_lower]
-                expanded[word] = expansion
-                # Replace exact word boundary match with expansion
-                normalized_text = re.sub(
-                    rf"\b{re.escape(word)}\b",
-                    f"{word} ({expansion})",
-                    normalized_text,
-                    flags=re.IGNORECASE
-                )
+        # 2. Single left-to-right pass: each token is expanded at most once, so
+        #    repeated words are never double-expanded and "HR+" is kept intact.
+        expanded: dict[str, str] = {}
+        parts: list[str] = []
+        last = 0
+        for m in self._TOKEN_RE.finditer(cleaned):
+            token = m.group(0)
+            expansion = self._expansion_for(token)
+            if expansion is None or expansion.lower() == token.lower():
+                continue
+            parts.append(cleaned[last:m.end()])
+            parts.append(f" ({expansion})")
+            last = m.end()
+            expanded.setdefault(token, expansion)
+        parts.append(cleaned[last:])
+        normalized_text = "".join(parts)
 
         # 3. Medical Concept & Clinical Staging Rewriting
         rewritten_text = normalized_text
@@ -122,12 +139,17 @@ class QueryNormalizer:
                 flags=re.IGNORECASE
             )
 
-        # Check concept synonyms
+        # Concept synonyms are appended to the search text so the sparse
+        # (lexical) channel can match papers that use a different term.
+        added_synonyms: list[str] = []
         for concept, synonyms in self.SYNONYM_MAP.items():
-            if concept in query_lower and synonyms:
-                primary_syn = synonyms[0]
-                if primary_syn.lower() not in query_lower:
+            if re.search(rf"\b{re.escape(concept)}\b", query_lower) and synonyms:
+                new_syns = [s for s in synonyms if s.lower() not in query_lower]
+                if new_syns:
                     expanded[concept] = ", ".join(synonyms)
+                    added_synonyms.extend(new_syns[:2])
+        if added_synonyms:
+            rewritten_text = f"{rewritten_text} ({'; '.join(dict.fromkeys(added_synonyms))})"
 
         return NormalizedQuery(
             raw_query=query,
