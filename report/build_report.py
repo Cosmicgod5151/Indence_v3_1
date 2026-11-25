@@ -35,6 +35,7 @@ ABL = load("retrieval_ablation.json")
 ABL_OLD = load("retrieval_ablation_v1_original_blend.json")
 SAF = load("safety_eval.json")["summary"]
 CASE = load("case_mode_eval.json")["summary"]
+VER = load("verifier_eval.json")
 
 
 def m(mode, metric, ci=False, src=ABL, subset="all_queries"):
@@ -287,7 +288,21 @@ r.p("Dense retrievers capture paraphrase but can miss exact drug, gene or trial 
     "[32]. Ranking quality is measured with Recall@k, mean reciprocal rank (MRR) and nDCG [33], with bootstrap "
     "confidence intervals [34].")
 
-r.h2("2.5 Existing Products and Alternatives")
+r.h2("2.5 Calibrated Decision Models for Verification")
+r.p("Checking whether a sentence is supported by a passage is a natural-language-inference task. A common "
+    "approach is ‘LLM-as-a-judge’: a chat model is prompted to write its verdict [38]. That works, but the "
+    "verdict is generated text. It has no reliable confidence attached, it must be parsed (and can be "
+    "truncated or malformed), and each check costs a full generation call. For a safety gate, the confidence "
+    "matters as much as the label: a system should act on a verdict only when the verifier is sure, and a "
+    "probability is useful only if it is calibrated, meaning that verdicts given with 90% confidence are right "
+    "about 90% of the time [40]. Acting only above a confidence threshold is known as selective prediction [41].")
+r.p("Gemini Decision 1 (released November 2026) is a model built for this kind of closed-set judgement. Instead "
+    "of generating text, it scores a fixed set of options (for example supported / contradicted / not "
+    "established) and returns a probability for each, and one request can carry many questions over a shared "
+    "input [36, 37]. Indence uses it as the claim and section verifier; Section 6.6 reports our own experiment "
+    "on its accuracy, calibration and cost.")
+
+r.h2("2.6 Existing Products and Alternatives")
 r.table(["Solution", "Strength", "Limitation relevant to Indence"], [
     ["ChatGPT and similar general assistants", "Broad reasoning, natural interaction", "No guarantee that references exist or support the claim; accepts identifiable data"],
     ["OpenEvidence", "Purpose-built clinical evidence Q&A with citations", "Closed system; claim-level verification, applicability and certainty logic are not inspectable"],
@@ -296,7 +311,7 @@ r.table(["Solution", "Strength", "Limitation relevant to Indence"], [
     ["PubMed / PMC search", "Authoritative, complete discovery", "No synthesis, appraisal or applicability; time-consuming"],
 ], [1.6, 2.0, 2.6], "Existing solutions compared [10, 12, 14, 15, 16]", bold_first_col=True)
 
-r.h2("2.6 Gap Analysis")
+r.h2("2.7 Gap Analysis")
 r.p("The gap is not that medical AI does not exist. It is that, in available tools, the steps between retrieval "
     "and a confident sentence are opaque and unmeasured. Table 2.2 maps each observed weakness to the Indence "
     "design response and to the experiment that tests it.")
@@ -451,8 +466,10 @@ r.table(["Domain", "Signal used", "Effect"], [
 
 r.h2("4.6 Verification and Abstention Policy")
 r.p("All atomic claims and the prose sections of the brief are sent, with only the passages each one cites, "
-    "to the verifier in a single request. The verifier (Gemini Decision 1) returns a label (supported, "
-    "contradicted or not established) with calibrated probabilities. The policy is:")
+    "to the verifier in a single request. Each distinct passage is included once, in full, and every claim is "
+    "judged against exactly the passages it cites. The verifier (Gemini Decision 1) returns a label (supported, "
+    "contradicted or not established) with a probability for each, so the policy can act on how sure the "
+    "verifier is (Section 6.6). The policy is:")
 r.bullets([
     "A claim or section contradicted by its own source is removed and listed under ‘Removed by verification’.",
     "The whole answer is withheld if more than one third of claims, or the recommendation itself, is contradicted, or if fewer than half of the claims are supported.",
@@ -684,9 +701,79 @@ r.p("The applicability rows were computed with facts from the regex fallback bec
     "for example exon 20 trials matched to an exon 19 patient and adjuvant trials matched to stage IV disease "
     "(Appendix B).")
 
-r.h2("6.6 Verifier and Safety-Check Validation")
+r.h2("6.6 Experiment: Gemini Decision 1 as the Claim Verifier")
+VD, VC = VER["summary"]["decision_1"], VER["summary"]["chat_verifier"]
+E2 = VER["summary"]["e2_evidence_visibility"]
+r.p("Gemini Decision 1 was released on 11 November 2026, two weeks before this report, so there is no published "
+    "evaluation of it for clinical claim verification. We therefore ran our own controlled experiment "
+    "(evals/run_verifier_eval.py) to answer three questions: is it accurate enough to gate answers, are its "
+    "confidence values trustworthy, and what does it cost compared with the chat-model verifier it replaced?")
+r.h3("6.6.1 Design")
+r.p(f"From the corpus, {VER['n_passages']} passages reporting a treatment-comparison ratio with a 95% CI were "
+    "sampled with a fixed seed. For each passage, five claims were generated whose correct label is known by "
+    "construction, a controlled-perturbation approach similar to synthetic factual-consistency tests [39]:")
+r.table(["Claim type", "Example (generated from the passage)", "Correct label"], [
+    ["Faithful", "The study reported a hazard ratio of 0.53 (95% CI 0.38 to 0.73).", "Supported"],
+    ["Number changed", "… a hazard ratio of 0.70 (95% CI 0.38 to 0.73).", "Contradicted"],
+    ["Digits swapped", "… a hazard ratio of 0.35 (95% CI 0.38 to 0.73). (the 18.9 vs 19.8 trap)", "Contradicted"],
+    ["Significance reversed", "… was not statistically significant, because its CI included 1.", "Contradicted"],
+    ["Not in passage", "In patients aged 80 years or older, the study reported a hazard ratio of 0.41.", "Not established"],
+], [1.4, 3.6, 1.2], "Claim types in the verifier experiment", size=9.5, bold_first_col=True)
+r.p(f"Both verifiers judged the same {VER['n_claims']} claim–passage pairs: Gemini Decision 1 (calibrated "
+    f"choice) and the chat-model NLI verifier used before it ({VC.get('model', '').split(':')[-1]}, the same "
+    "family as the generator). **Methodological note:** a first run named the endpoint in each claim (e.g. "
+    "“hazard ratio for mortality”) using the extractor’s guess. Manual review of the disagreements showed that "
+    "the guess was wrong for some passages (an OlympiA disease-free-survival ratio and a lymphoma PFS ratio were "
+    "labelled mortality), so several “errors” were in fact the verifier correctly rejecting a mis-specified "
+    "claim. The final design anchors every claim to the reported interval instead.")
+r.h3("6.6.2 Results")
+r.table(["Measure", "Gemini Decision 1", "Chat-LLM verifier"], [
+    ["Accuracy / macro-F1", f"{VD['accuracy']:.1%} / {VD['macro_f1']:.3f}", f"{VC['accuracy']:.1%} / {VC['macro_f1']:.3f}"],
+    ["Calibrated confidence per verdict", f"Yes: Brier {VD['brier']:.3f}, ECE {VD['ece']:.3f}", "No (label only)"],
+    ["Requests for all claims", str(VD["requests"]), str(VC["requests"])],
+    ["Time per claim", f"{VD['latency_ms_per_claim']:.0f} ms", f"{VC['latency_ms_per_claim']:.0f} ms"],
+    ["Free-tier allowance", "10,000 requests/day; 50,000 input tokens/min", "≈ 20 requests/day per Flash model, shared with answer generation"],
+    ["Output format", "Closed set; nothing to parse", "Generated JSON; can fail to parse or be truncated"],
+], [1.9, 2.2, 2.1], f"Verifier comparison on {VER['n_claims']} claims with known labels", size=9.5, bold_first_col=True)
+r.figure(EVF / "verifier_eval.png", "Verifier experiment: accuracy by claim type, time per claim, and the effect of truncating the evidence", width=6.2)
+rc = {round(x["threshold"], 2): x for x in VD["risk_coverage"]}
+r.p(f"**Accuracy.** Both verifiers caught every changed number, swapped digit and reversed significance. "
+    f"Decision 1’s only errors were on the ‘not in passage’ claims, where it twice answered ‘contradicted’ "
+    f"instead of ‘not established’. Overall it reached {VD['accuracy']:.1%}, against {VC['accuracy']:.1%} for the "
+    "chat model. On accuracy alone, Decision 1 is not better than a good chat model.")
+r.p(f"**Calibration is what it adds.** Its expected calibration error was {VD['ece']:.3f} [40, 42]. When its "
+    f"confidence was at least 0.90, it was right {rc[0.9]['accuracy']:.0%} of the time on {rc[0.9]['coverage']:.0%} "
+    f"of claims; at 0.85, {rc[0.85]['accuracy']:.1%} on {rc[0.85]['coverage']:.0%}. A chat model gives a label "
+    "with no usable confidence, so it cannot support such thresholds. Indence uses this directly: the "
+    "confidence is shown on every badge, contradicted content is removed only with its probability displayed, "
+    "and the AI interaction screen reports pairs only above 0.85 (selective prediction [41]).")
+r.p(f"**Cost and quota.** Decision 1 was about {VC['latency_ms_per_claim'] / VD['latency_ms_per_claim']:.0f}× "
+    "faster per claim and used half the requests. More importantly for a zero-budget system, its separate "
+    "10,000-request daily allowance means verification never competes with answer generation for the ≈ 20 "
+    "daily requests of each Flash model.")
+r.h3("6.6.3 Evidence Visibility")
+r.p("The same experiment quantified the truncation defect described in Section 6.4. Each claim’s source "
+    "passage was placed after two passages from other papers that contain no ratios, as happens when a section "
+    "cites several passages. The old input joined them and cut at 4,000 characters; the fixed input sends each "
+    "passage in full.")
+r.table(["Claims", "Old: joined and cut", "Fixed: each passage in full"], [
+    [f"Faithful (n = {E2['supported']['n']})", f"{E2['supported']['truncated_join_accuracy']:.0%} correct "
+     f"({E2['supported']['truncated_join_not_established']:.0%} ‘not established’)", f"{E2['supported']['full_passages_accuracy']:.0%} correct"],
+    [f"Number changed (n = {E2['number_changed']['n']})", f"{E2['number_changed']['truncated_join_accuracy']:.0%} correct",
+     f"{E2['number_changed']['full_passages_accuracy']:.0%} correct"],
+], [2.0, 2.3, 1.9], "Effect of the truncation defect on verification", size=10)
+r.p("A verifier that cannot see the evidence defaults to ‘not established’, which is exactly the 48% badge "
+    "seen in the live application. The fix restores the verifier’s accuracy without any extra requests.")
+r.h3("6.6.4 What Kind of Model Is It?")
+r.p("Google describes Decision 1 as answering closed-set questions (yes/no, multiple choice, rubric scores) by "
+    "scoring the predefined options in a single pass and returning a probability for each, rather than "
+    "generating text; one request can carry many questions over a shared input [36, 37]. In that respect it "
+    "behaves like a discriminative judge, closer in spirit to non-generative approaches such as joint-embedding "
+    "predictive architectures (JEPA), which predict in a representation space instead of producing tokens "
+    "[43]. Google has not published its architecture, so this is an analogy based on its interface, not a "
+    "claim about how it is built. We treat it as a black box and judge it only by measured behaviour.")
+r.h3("6.6.5 Safety Check and Appraisal Logic")
 r.bullets([
-    "**Claim verifier.** On a labelled probe, Gemini Decision 1 judged 4 of 4 cases correctly with confidence 0.98–0.996, including a trap where the claim said 18.9 months and the source 19.8 months. All claims of an answer are verified in one request.",
     "**Safety check.** On a live HR-positive breast case the AI screen identified capivasertib × clarithromycin (p = 0.94) and elacestrant × clarithromycin (p = 0.87), both CYP3A4 label warnings, which were then added to the curated rules. It also produced one false positive (alpelisib × denosumab, p = 0.73), which led to the 0.85 display threshold and the separate ‘needs review’ severity.",
     "**Certainty and effect map.** Unit tests cover extraction of ratios with intervals, the treatment/prognostic split, the Q, I² and τ² formulas, and each certainty downgrade.",
 ])
@@ -847,6 +934,14 @@ REFS = [
     "Järvelin K, Kekäläinen J. Cumulated gain-based evaluation of IR techniques. ACM Trans Inf Syst. 2002;20(4):422–446.",
     "Efron B, Tibshirani RJ. An Introduction to the Bootstrap. Chapman & Hall/CRC; 1993.",
     "U.S. Department of Health and Human Services. Guidance regarding methods for de-identification of protected health information in accordance with the HIPAA Privacy Rule (45 CFR §164.514(b)). 2012.",
+    "Google Cloud Community. Gemini Decisions API: fast, calibrated multimodal decisions. Medium (Google Cloud publication); November 2026. https://medium.com/google-cloud/gemini-decisions-api-fast-calibrated-multimodal-decisions-56d032e9cbc6",
+    "DataCamp. Gemini Decisions API: testing Google’s new decision model. Tutorial; November 2026. https://www.datacamp.com/tutorial/gemini-decisions-api",
+    "Zheng L, Chiang W-L, Sheng Y, et al. Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. Advances in Neural Information Processing Systems 36 (NeurIPS 2023), Datasets and Benchmarks Track.",
+    "Kryściński W, McCann B, Xiong C, Socher R. Evaluating the factual consistency of abstractive text summarization. Proc. EMNLP 2020:9332–9346.",
+    "Guo C, Pleiss G, Sun Y, Weinberger KQ. On calibration of modern neural networks. Proc. ICML 2017:1321–1330.",
+    "Geifman Y, El-Yaniv R. Selective classification for deep neural networks. Advances in Neural Information Processing Systems 30 (NeurIPS 2017).",
+    "Brier GW. Verification of forecasts expressed in terms of probability. Monthly Weather Review. 1950;78(1):1–3.",
+    "Assran M, Duval Q, Misra I, et al. Self-supervised learning from images with a joint-embedding predictive architecture. Proc. CVPR 2023:15619–15629.",
 ]
 for i, ref in enumerate(REFS, 1):
     para = r.p(f"[{i}] {ref}", align=WD_ALIGN_PARAGRAPH.LEFT, after=4)
@@ -861,8 +956,8 @@ r.p("Each Milestone-1 requirement is mapped to the module that implements it and
 r.table(["ID", "Implemented in", "Evidence"], [
     ["FR-03", "retrieval/normalization", "Regression tests S5; Table 5.4"],
     ["FR-04", "retrieval/retriever.py, adapters/models/bge_m3.py", "Ablation Table 6.3; sparse-vector fix (5.3)"],
-    ["FR-05", "retrieval/context_assembler.py", "Ablation; latency Table 6.7"],
-    ["FR-06/07", "synthesis/synthesizer.py, validator.py, citation_auditor.py", "Invalid citation rate 0% (Table 6.5)"],
+    ["FR-05", "retrieval/context_assembler.py", "Ablation; latency Table 6.10"],
+    ["FR-06/07", "synthesis/synthesizer.py, validator.py, citation_auditor.py", "Invalid citation rate 0% (Table 6.5); verifier experiment (Tables 6.8, 6.9)"],
     ["FR-09", "synthesis/abstention.py, pipeline gates", "Correct abstention 100% (Table 6.5)"],
     ["FR-11", "query_runs, retrieval_traces tables; Audit tab", "Figure 5.2; Execution Audit tab"],
     ["FR-16/17", "contradiction_checker.py, evidence_grouper.py, effect_map.py", "Forest plot (Figure 5.3); unit tests"],
@@ -871,7 +966,7 @@ r.table(["ID", "Implemented in", "Evidence"], [
     ["FR-21", "clinical/safety_check.py, SafetyCheck.js", "Figure 5.6; test_safety_check.py"],
     ["FR-22", "synthesis/effect_map.py, certainty.py", "test_effect_map.py; certainty card"],
     ["FR-23", "model_trace in API; ModelTrace.js", "Figure 5.2"],
-    ["NFR-01", "Parallel retrieval, vector reuse, model chain", "Table 6.7"],
+    ["NFR-01", "Parallel retrieval, vector reuse, model chain", "Table 6.10"],
     ["NFR-05", "Evidence-ID constraint + audit", "0 fabricated references (Table 6.5)"],
     ["NFR-12/13", "Span verification, PHI guard", "Traceability 95.8%; 0/6 PHI leaks"],
 ], [0.8, 2.9, 2.5], "Requirement traceability", size=9.5, bold_first_col=True)

@@ -242,6 +242,42 @@ ver.forEach(([h, b], i) => {
 });
 s.addNotes("The screenshot is a real answer. Each section shows the verifier's verdict and confidence; 'not fully established' means the cited passages only partly support it. The verifier was 4 of 4 on a labelled probe, including a trap where the claim said 18.9 months and the source said 19.8. A single request covers all claims, so we stay inside the free tier of 10,000 requests a day.");
 
+// ================================================================== 8b Decision 1 experiment
+{
+  const V = RES("verifier_eval.json");
+  const VD = V.summary.decision_1, VC = V.summary.chat_verifier, E2 = V.summary.e2_evidence_visibility;
+  const rc = Object.fromEntries(VD.risk_coverage.map((x) => [x.threshold.toFixed(2), x]));
+  s = content("Gemini Decision 1: a new kind of verifier, tested", "Results");
+  text(s, `Released 11 Nov 2026. It scores fixed options (supported / contradicted / not established) and returns a probability for each, instead of generating text. Our experiment: ${V.n_claims} claims from ${V.n_passages} real passages, correct labels known by construction.`,
+    { x: 0.6, y: 1.35, w: 12.1, h: 0.8, fontSize: 15, color: C.text2 });
+  const vs = [
+    [`${Math.round(rc["0.90"].accuracy * 100)}% correct`, `when its confidence is ≥ 0.90 (${Math.round(rc["0.90"].coverage * 100)}% of claims); calibration error ${VD.ece.toFixed(2)}`],
+    [`${Math.round(VD.latency_ms_per_claim)} ms vs ${Math.round(VC.latency_ms_per_claim)} ms`, "per claim, Decision 1 vs chat-model verifier"],
+    ["10,000 vs ≈ 20", "free requests per day: verification never competes with answer writing"],
+    [`${(VD.accuracy * 100).toFixed(1)}% vs ${(VC.accuracy * 100).toFixed(0)}%`, "plain accuracy: no better than a chat model; its value is calibration, speed and quota"],
+  ];
+  vs.forEach(([big, sub], i) => {
+    const x = 0.6 + (i % 2) * 3.55, y = 2.35 + Math.floor(i / 2) * 2.2;
+    card(s, x, y, 3.35, 2.0);
+    text(s, big, { x: x + 0.25, y: y + 0.2, w: 2.9, h: 0.6, fontSize: 24, bold: true, color: i === 3 ? C.text1 : C.accent1, fontFace: "Cambria" });
+    text(s, sub, { x: x + 0.25, y: y + 0.85, w: 2.9, h: 1.05, fontSize: 14, color: C.text2 });
+  });
+  s.addChart(pres.charts.BAR, [
+    { name: "Joined, cut at 4,000 chars (old)", labels: ["Faithful claims", "Number-changed claims"], values: [E2.supported.truncated_join_accuracy * 100, E2.number_changed.truncated_join_accuracy * 100] },
+    { name: "Each passage in full (fixed)", labels: ["Faithful claims", "Number-changed claims"], values: [E2.supported.full_passages_accuracy * 100, E2.number_changed.full_passages_accuracy * 100] },
+  ], {
+    x: 7.9, y: 2.3, w: 4.8, h: 4.45, barDir: "col", barGrouping: "clustered", barGapWidthPct: 60,
+    chartColors: [HEX.accent6, HEX.accent1], showValue: true, dataLabelPosition: "outEnd", dataLabelFormatCode: "0\"%\"",
+    dataLabelFontSize: 11, dataLabelColor: HEX.dk2, catAxisLabelFontSize: 12, valAxisLabelFontSize: 11,
+    catAxisLabelColor: HEX.dk2, valAxisLabelColor: HEX.dk2, valAxisMinVal: 0, valAxisMaxVal: 110, valAxisMajorUnit: 25, valAxisLabelFormatCode: "0",
+    valGridLine: { color: "E3E8EB", size: 0.75 }, catGridLine: { style: "none" },
+    showLegend: true, legendPos: "b", legendFontSize: 11, legendColor: HEX.dk2,
+    showTitle: true, title: "Verifier accuracy when it can or cannot see the evidence (%)", titleFontSize: 13, titleColor: HEX.dk1,
+    ...chartText, objectName: uid("chart"),
+  });
+  s.addNotes(`Gemini Decision 1 came out two weeks ago, so we tested it ourselves. We built ${V.n_claims} claims from ${V.n_passages} real passages with known answers: faithful claims, changed numbers, swapped digits like 18.9 versus 19.8, reversed significance, and facts the passage never states. Honest result: on plain accuracy it is not better than a chat model (${(VD.accuracy * 100).toFixed(1)} versus ${(VC.accuracy * 100).toFixed(0)} percent); its two errors were calling an unreported fact contradicted. What it adds is calibration: when it says 90 percent or more, it was right every time, on ${Math.round(rc["0.90"].coverage * 100)} percent of claims, which is why we show its confidence and use thresholds. It is about ${Math.round(VC.latency_ms_per_claim / VD.latency_ms_per_claim)} times faster and has its own 10,000-request daily quota. The chart is the bug the experiment confirmed: when passages were joined and cut at 4,000 characters, the verifier could not see the evidence and fell back to 'not established'. It behaves like a discriminative judge, similar in spirit to non-generative models such as JEPA, but Google has not published its architecture, so we judge it only by measured behaviour.`);
+}
+
 // ================================================================== 9 appraisal
 s = content("Appraisal a chatbot cannot do", "Results");
 img(s, "ss_forest.png", 0.6, 1.45, 7.3, 3.88, "Forest plot of hazard ratios extracted verbatim from retrieved passages");

@@ -59,7 +59,21 @@ Bootstrap resampling of the 119 questions gives 95% confidence intervals without
 The prompt supplies evidence IDs (E01.S3, …) and the model must return JSON claims citing only those IDs. The server audits every ID against the bundle. An unknown ID invalidates the claim, so a citation cannot point outside the retrieved text. Measured invalid-citation rate: 0%.
 
 **14. How does verification work? Why Gemini Decision 1?**
-All claims and prose sections are sent in one request, each with only the passages it cites. Decision 1 returns supported, contradicted or not established, with calibrated probabilities. On a labelled probe it was 4/4, including 18.9 vs 19.8 months. We chose it for the calibration and because the free tier allows 10,000 requests per day, while Flash models allow about 20.
+All claims and prose sections are sent in one request. Each cited passage is included once, in full, and each claim is judged against exactly its own passages. Decision 1 returns supported, contradicted or not established, with a probability for each. We chose it for the calibration, the speed, and its separate free quota of 10,000 requests per day; Flash models allow about 20.
+
+**14a. What is Gemini Decision 1? Is it a new technology?**
+Google released it on 11 November 2026. It answers closed-set questions (yes/no, multiple choice, rubric scores) by **scoring the given options in one pass** and returning a probability for each. It does not generate text, and one request can hold many questions over a shared input. That makes it a discriminative judge rather than a chatbot. In spirit it resembles non-generative approaches such as JEPA (joint-embedding predictive architecture), which predict in representation space instead of producing tokens. But Google has not published its architecture, so say "behaves like", never "is built like". We treat it as a black box and judge it by measurements.
+
+**14b. How do you know it works? What was your experiment?** (report §6.6, `evals/run_verifier_eval.py`)
+- **Design:** 25 real corpus passages, each reporting a hazard or odds ratio with a 95% CI. From each we generated 5 claims whose correct answer is known by construction: a faithful claim, a changed number, swapped digits (0.53 → 0.35), reversed significance, and a subgroup result the passage never reports. That gave 119 claims. Decision 1 and the chat-model verifier it replaced (gemini-3.1-flash-lite) judged the same pairs.
+- **Accuracy:** Decision 1 98.3%, chat model 100%. Both caught every changed number, swapped digit and reversed significance. Decision 1's 2 errors were "contradicted" instead of "not established" for unreported facts. So **it is not more accurate**; say this openly.
+- **What it adds:**
+  - **Calibration** (expected calibration error 0.05): at confidence ≥ 0.90 it was 100% correct on 76% of claims. That makes thresholds meaningful, like the 0.85 cut-off for AI interaction flags and the confidence shown on every badge.
+  - **Speed:** about 18× faster per claim (30 ms vs 538 ms).
+  - **Quota:** its own 10,000/day, so verification never uses up the generator's ~20/day.
+  - **No parsing failures:** the output is a closed set, not JSON text.
+- **Lesson from the first run:** we first wrote claims with the endpoint name taken from our extractor. Manual review showed the extractor sometimes guessed wrong, for example an OlympiA disease-free-survival HR labelled as mortality. In those cases the verifier was right to reject the claim. We fixed the test design, not the result.
+- **Limits:** the free tier also caps input at 50,000 tokens per minute (we hit it when batching 75 passages). One answer is about 5,000 tokens, so production use is far below that.
 
 **15. Why abstain when more than 1/3 of claims are contradicted or fewer than 50% are supported? Aren't those arbitrary?**
 They are a priori policy choices, not learned thresholds. Earlier, a single contradicted claim killed the whole answer, which caused over-abstention. Now a contradicted claim is removed and shown, and the answer is withheld only when the core is unreliable. A sensitivity analysis of these thresholds is future work, and we say so.

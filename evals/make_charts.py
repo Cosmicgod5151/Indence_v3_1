@@ -14,6 +14,7 @@ import json
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import PercentFormatter  # noqa: E402
 
 from _common import RESULTS_DIR  # noqa: E402
 
@@ -184,7 +185,68 @@ def case_chart():
     print("wrote", FIG / "case_mode_eval.png")
 
 
+def verifier_chart():
+    d = load("verifier_eval.json")
+    if not d:
+        return
+    s = d["summary"]
+    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(12.5, 4.6), gridspec_kw={"width_ratios": [2.3, 1, 1.3]})
+    names = {"supported": "Faithful", "number_changed": "Number\nchanged", "digits_swapped": "Digits\nswapped",
+             "significance_flip": "Significance\nreversed", "unreported": "Not in\npassage"}
+    types = [t for t in names if t in s["by_type"]]
+    xs = list(range(len(types)))
+    dv = [s["by_type"][t]["decision_1"] for t in types]
+    cv = [s["by_type"][t]["chat_verifier"] for t in types]
+    a1.bar([x - 0.2 for x in xs], dv, 0.38, color=SYS["indence"], label="Gemini Decision 1")
+    a1.bar([x + 0.2 for x in xs], cv, 0.38, color=BEFORE, label=f"Chat-LLM verifier ({s['chat_verifier'].get('model', '').split(':')[-1]})")
+    for x, v in zip(xs, dv):
+        a1.text(x - 0.2, v + 0.015, f"{v:.0%}", ha="center", fontsize=8, color=INK)
+    a1.set_xticks(xs, [names[t] for t in types], fontsize=8.5)
+    a1.set_ylim(0, 1.12)
+    a1.set_title(f"Accuracy by claim type ({d['n_claims']} claims)", loc="left", fontsize=11)
+    a1.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=8.5)
+    a1.yaxis.set_major_formatter(PercentFormatter(1.0))
+    a1.grid(axis="y", color=GRID, linewidth=0.8)
+    a1.set_axisbelow(True)
+
+    lat = [s["decision_1"]["latency_ms_per_claim"], s["chat_verifier"]["latency_ms_per_claim"]]
+    a2.bar([0, 1], lat, 0.6, color=[SYS["indence"], BEFORE])
+    for x, v in zip([0, 1], lat):
+        a2.text(x, v + 12, f"{v:.0f} ms", ha="center", fontsize=9, color=INK)
+    a2.set_xticks([0, 1], ["Decision 1", "Chat LLM"], fontsize=9)
+    a2.set_title("Time per claim", loc="left", fontsize=11)
+    a2.set_ylabel("milliseconds")
+    a2.set_ylim(0, max(lat) * 1.2)
+    a2.grid(axis="y", color=GRID, linewidth=0.8)
+    a2.set_axisbelow(True)
+
+    e2 = s.get("e2_evidence_visibility", {})
+    keys = [k for k in ("supported", "number_changed") if k in e2]
+    xs3 = list(range(len(keys)))
+    tv = [e2[k]["truncated_join_accuracy"] for k in keys]
+    fv = [e2[k]["full_passages_accuracy"] for k in keys]
+    a3.bar([x - 0.2 for x in xs3], tv, 0.38, color=BEFORE, label="Joined, cut at 4,000 chars (old)")
+    a3.bar([x + 0.2 for x in xs3], fv, 0.38, color=SYS["indence"], label="Each passage in full (fixed)")
+    for x, v in zip(xs3, tv):
+        a3.text(x - 0.2, v + 0.015, f"{v:.0%}", ha="center", fontsize=8, color=INK2)
+    for x, v in zip(xs3, fv):
+        a3.text(x + 0.2, v + 0.015, f"{v:.0%}", ha="center", fontsize=8, color=INK)
+    a3.set_xticks(xs3, ["Faithful\nclaims", "Number-changed\nclaims"][:len(keys)], fontsize=8.5)
+    a3.set_ylim(0, 1.12)
+    a3.set_title("Evidence visibility", loc="left", fontsize=11)
+    a3.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=1, fontsize=8)
+    a3.yaxis.set_major_formatter(PercentFormatter(1.0))
+    a3.grid(axis="y", color=GRID, linewidth=0.8)
+    a3.set_axisbelow(True)
+    fig.tight_layout()
+    path = FIG / "verifier_eval.png"
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    print("wrote", path)
+
+
 if __name__ == "__main__":
+    verifier_chart()
     retrieval_chart()
     safety_chart()
     latency_chart()

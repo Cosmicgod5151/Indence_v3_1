@@ -105,3 +105,19 @@ The applicability rows were computed with facts from the regex fallback, because
 - **Example:** in the trastuzumab deruxtecan recommendation, which cited 5 passages (7,705 characters), the verdict was "not established" (48%) on truncated passages and "supported" (95%) on full passages. Its three sentences checked separately scored 90–96% supported.
 - **Fix:** every cited passage is sent once, in full, and each claim is judged against exactly its own passages (`gemini_decision.py`, `abstention.py`, `query_pipeline._verify_sections`). Two regression tests were added (122 passing).
 - **Effect on reported numbers:** Section 2 was measured before the fix and is unchanged. The 90% answer rate may be an underestimate, because the "too few claims verified" abstention could have been caused by this defect. Re-run `evals/rerun_indence_column.py` to re-measure when the free-tier quota allows.
+
+## Verifier experiment: Gemini Decision 1 vs chat-LLM verifier (`evals/run_verifier_eval.py`)
+- **Design:** 25 corpus passages that report a treatment-comparison ratio with a 95% CI. From each, 5 claims with labels known by construction: faithful, number changed, digits swapped, significance reversed, and not in the passage. That gives 119 claims.
+- **Accuracy:** Decision 1 98.3% (macro-F1 0.981); chat verifier (gemini-3.1-flash-lite) 100%.
+  - Both caught every number, digit and significance perturbation.
+  - Decision 1's 2 errors labelled an unreported subgroup claim "contradicted" instead of "not established".
+- **Calibration** (Decision 1 only): Brier 0.038, ECE 0.051. At confidence ≥ 0.90 it was 100% accurate on 76% of claims; at ≥ 0.85, 99.0% on 87%.
+- **Cost:** 30 ms vs 538 ms per claim; 3 vs 6 requests. Decision 1 has its own free quota of 10,000 requests/day, but also an input limit of 50,000 tokens/minute.
+- **Evidence visibility:** the source passage was placed after two ratio-free passages.
+
+| Claims | Joined and cut at 4,000 characters | Each passage in full |
+|---|---|---|
+| Faithful | 24% correct (76% "not established") | 100% |
+| Number changed | 33% correct | 100% |
+
+- **Lesson:** the first run named endpoints from the extractor's guess, which was wrong for some passages, so several "errors" were the verifier correctly rejecting a mis-specified claim. The final design anchors every claim to the reported interval.
